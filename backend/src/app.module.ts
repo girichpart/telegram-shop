@@ -1,9 +1,11 @@
 import { Module } from '@nestjs/common';
-import { StrapiController } from './strapi/strapi.controller';
+import { StrapiModule } from './strapi/strapi.module';
+import { PaymentsModule } from './payments/payments.module';
+import { DeliveryModule } from './delivery/delivery.module';
 
 @Module({
-  imports: [],
-  controllers: [StrapiController],
+  imports: [StrapiModule, PaymentsModule, DeliveryModule],
+  controllers: [],
   providers: [],
 })
 export class AppModule {}

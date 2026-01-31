@@ -8,5 +8,14 @@ build
 uploads
 *.log
 .DS_Store
-
-
+coverage
+.eslintcache
+.yarn/*
+!.yarn/cache
+!.yarn/unplugged
+!.yarn/patches
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+.pnp.*
+yarn-error.log

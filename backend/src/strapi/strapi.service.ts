@@ -1,8 +1,11 @@
+import { Injectable, Logger } from '@nestjs/common';
 import axios from 'axios';
 
+@Injectable()
 export class StrapiService {
-  private baseUrl = 'http://localhost:1337';
-  private token = ''; // оставляем пустым для публичных данных
+  private readonly logger = new Logger(StrapiService.name);
+  private baseUrl = process.env.STRAPI_URL || 'http://localhost:1337';
+  private token = process.env.STRAPI_TOKEN || '';
 
   async getProducts() {
     try {
@@ -11,7 +14,7 @@ export class StrapiService {
       });
       return response.data;
     } catch (error: any) {
-      console.error('Strapi getProducts error:', error.response?.data || error.message);
+      this.logger.error('Strapi getProducts error:', error.message);
       throw new Error('Ошибка при получении товаров из Strapi');
     }
   }
@@ -23,7 +26,7 @@ export class StrapiService {
       });
       return response.data;
     } catch (error: any) {
-      console.error('Strapi createOrder error:', error.response?.data || error.message);
+      this.logger.error('Strapi createOrder error:', error.message);
       throw new Error('Ошибка при создании заказа в Strapi');
     }
   }
