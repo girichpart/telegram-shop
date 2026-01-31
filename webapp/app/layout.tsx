@@ -1,11 +1,11 @@
 import './globals.css';
-import Layout from './components/layout/Layout';
+import { CartProvider } from './context/CartContext';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ru">
-      <body className="bg-gray-100 text-gray-900">
-        <Layout>{children}</Layout>
+      <body className="bg-gray-100">
+        <CartProvider>{children}</CartProvider>
       </body>
     </html>
   );
