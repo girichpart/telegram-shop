@@ -30,5 +30,9 @@ export class StrapiService {
       throw new Error('Ошибка при создании заказа в Strapi');
     }
   }
+  async getOrdersByPhone(phone: string) {
+  const response = await axios.get(`${this.baseUrl}/api/orders?filters[phone][$eq]=${phone}`, { headers: { Authorization: `Bearer ${this.token}` } });
+  return response.data;
+}
 }
 

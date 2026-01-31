@@ -7,11 +7,12 @@ const nextConfig: NextConfig = {
   },
   images: {
     remotePatterns: [
-      {
-        protocol: "http",
-        hostname: "localhost",
-      },
+      { protocol: "http", hostname: "localhost" },
+      { protocol: "https", hostname: "**" }, // Для изображений товаров
     ],
+  },
+  env: {
+    NEXT_PUBLIC_BACKEND_URL: process.env.NEXT_PUBLIC_BACKEND_URL,
   },
 };
 

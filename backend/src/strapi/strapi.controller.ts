@@ -11,7 +11,11 @@ export class StrapiController {
     private readonly paymentsService: PaymentsService,
     private readonly deliveryService: DeliveryService,
   ) {}
-
+  @Get('orders')
+async getOrders(@Query('phone') phone: string) {
+  if (!phone) throw new BadRequestException('Phone required');
+  return this.strapiService.getOrdersByPhone(phone);
+}
   @Get('products')
   async getProducts() {
     return this.strapiService.getProducts();
@@ -25,4 +29,5 @@ export class StrapiController {
     // Обнови order с payment и delivery (опционально)
     return { order, payment, deliveryCost };
   }
+    
 }

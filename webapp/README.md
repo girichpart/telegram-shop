@@ -1,15 +1,15 @@
 # Webapp (Next.js for Telegram Mini App)
 
-Фронтенд для Telegram-магазина.
+Фронтенд для Telegram-магазина: каталог, корзина, checkout с Yookassa/CDEK, отслеживание заказов.
 
-## Getting Started
-1. Скопируй .env.example в .env.local (BACKEND_URL, etc.).
+## Setup
+1. .env.local: NEXT_PUBLIC_BACKEND_URL=http://localhost:3000
 2. `npm install`
 3. `npm run dev`
 
-Open http://localhost:3000.
-
 ## Features
-- Zustand для state.
-- Swiper для слайдеров.
-- Интеграция с backend API (/api/products, /api/orders).
+- Каталог товаров (с размерами, цветами).
+- Корзина (Zustand, persist).
+- Checkout: Выбор доставки CDEK (ПВЗ, расчёт), оплата Yookassa (redirect).
+- Отслеживание заказов по телефону.
+- Telegram WebApp интеграция.
