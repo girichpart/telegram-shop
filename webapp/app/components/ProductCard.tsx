@@ -1,37 +1,33 @@
 'use client';
-import React from 'react';
 
-export const ProductCard = ({ product }: { product: any }) => {
-  const imageUrl =
+export default function ProductCard({ product }: { product: any }) {
+  const image =
     product?.image?.data?.attributes?.url
       ? `http://localhost:1337${product.image.data.attributes.url}`
       : null;
 
   return (
-    <div className="bg-white p-4 rounded-lg shadow hover:shadow-lg transition">
-      {imageUrl ? (
-        <img
-          src={imageUrl}
-          alt={product?.name || 'Product'}
-          className="w-full h-48 object-cover rounded"
-        />
+    <div className="bg-white rounded-xl overflow-hidden shadow-sm">
+      {image ? (
+        <img src={image} className="w-full h-40 object-cover" />
       ) : (
-        <div className="w-full h-48 bg-gray-200 flex items-center justify-center rounded text-gray-500">
-          Нет изображения
+        <div className="h-40 bg-gray-200 flex items-center justify-center text-sm">
+          Нет фото
         </div>
       )}
 
-      <h2 className="text-lg font-semibold mt-2">
-        {product?.name || 'Без названия'}
-      </h2>
+      <div className="p-3">
+        <h3 className="font-medium text-sm line-clamp-2">
+          {product.name}
+        </h3>
 
-      <p className="text-gray-600 mt-1">
-        {product?.description || ''}
-      </p>
-
-      <p className="text-green-600 font-bold mt-2">
-        {product?.price ? `${product.price} ₽` : ''}
-      </p>
+        <div className="mt-2 flex items-center justify-between">
+          <span className="font-bold">{product.price} ₽</span>
+          <button className="text-sm px-3 py-1 bg-black text-white rounded-lg">
+            В корзину
+          </button>
+        </div>
+      </div>
     </div>
   );
-};
+}
