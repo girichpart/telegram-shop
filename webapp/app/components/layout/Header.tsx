@@ -1,12 +1,25 @@
 'use client';
+import { useState } from 'react';
+import { useCart } from '../../store/cart';
+import CartDrawer from '../cart/CartDrawer';
 
 export default function Header() {
+  const [open, setOpen] = useState(false);
+  const items = useCart(state => state.items);
+
   return (
-    <header className="sticky top-0 z-50 bg-white border-b">
-      <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
-        <span className="font-bold text-lg">🛍 Mini Shop</span>
-        <button className="text-sm font-medium">Корзина</button>
-      </div>
-    </header>
+    <>
+      <header className="sticky top-0 bg-white border-b z-40">
+        <div className="h-14 px-4 flex justify-between items-center max-w-6xl mx-auto">
+          <span className="font-bold">🛍 Mini Shop</span>
+
+          <button onClick={() => setOpen(true)}>
+            🛒 {items.length}
+          </button>
+        </div>
+      </header>
+
+      <CartDrawer open={open} onClose={() => setOpen(false)} />
+    </>
   );
 }
