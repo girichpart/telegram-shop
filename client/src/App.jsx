@@ -1,19 +1,23 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { init } from '@twa-dev/sdk'; // Telegram SDK
-import Home from './pages/Home';
-import Product from './pages/Product';
-import Cart from './pages/Cart';
-import Checkout from './pages/Checkout';
-import Track from './pages/Track';
-import Header from './components/Header';
-
-init(); // Инициализация Telegram Mini App
+import Home from './pages/Home.jsx';
+import Product from './pages/Product.jsx';
+import Cart from './pages/Cart.jsx';
+import Checkout from './pages/Checkout.jsx';
+import Track from './pages/Track.jsx';
+import Header from './components/Header.jsx';
 
 function App() {
+  useEffect(() => {
+    if (window.Telegram?.WebApp) {
+      window.Telegram.WebApp.ready();
+      window.Telegram.WebApp.expand();
+    }
+  }, []);
+
   return (
     <Router>
-      <div className="min-h-screen bg-black text-white font-sans">
+      <div className="min-h-screen bg-black text-white">
         <Header />
         <Routes>
           <Route path="/" element={<Home />} />
