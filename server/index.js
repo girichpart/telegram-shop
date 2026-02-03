@@ -2,19 +2,33 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const path = require('path');
+const fs = require('fs');
 
 const app = express();
+app.set('trust proxy', 1);
 
-app.use(cors());
-app.use(express.json());
+const allowedOrigins = [process.env.CLIENT_ORIGIN, process.env.ADMIN_ORIGIN].filter(Boolean);
+app.use(cors({
+  origin: allowedOrigins.length ? allowedOrigins : '*'
+}));
+app.use(express.json({ limit: '2mb' }));
+app.use(express.urlencoded({ extended: true }));
+
+const uploadsDir = path.join(__dirname, 'uploads');
+fs.mkdirSync(uploadsDir, { recursive: true });
+app.use('/uploads', express.static(uploadsDir));
+
+app.use('/api/admin', require('./src/routes/admin'));
+app.use('/api/uploads', require('./src/routes/uploads'));
 app.use('/api/products', require('./src/routes/products'));
+app.use('/api/orders', require('./src/routes/orders'));
 app.use('/api/payments', require('./src/routes/payments'));
 app.use('/api/delivery', require('./src/routes/delivery'));
 app.use('/api/track', require('./src/routes/track'));
 
 mongoose.connect(process.env.MONGO_URI).then(async () => {
   console.log('MongoDB connected');
-  // Dummy данные
   const Product = require('./src/models/Product');
   const count = await Product.countDocuments();
   if (count === 0) {

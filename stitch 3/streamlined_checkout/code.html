@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>grått Checkout</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        "tma-bg": "#E2E8E4", // Calming muted green/grey nature-inspired palette
+                        "tma-text": "#2D3436",
+                        "tma-hint": "#707571",
+                        "tma-link": "#4A5D4E",
+                        "tma-button": "#4A5D4E",
+                        "earth-border": "#C5CCC7",
+                        "nature-green": "#4A5D4E",
+                        "sage": "#8BA88E"
+                    },
+                    fontFamily: {
+                        "sans": ["Inter", "sans-serif"]
+                    }
+                },
+            },
+        }
+    </script>
+<style type="text/tailwindcss">
+        @layer base {
+            body {
+                @apply bg-tma-bg text-tma-text antialiased selection:bg-nature-green/20;
+                -webkit-tap-highlight-color: transparent;
+            }
+        }
+        .tma-input {
+            @apply w-full bg-white/60 border border-earth-border rounded-xl px-4 py-3.5 text-[16px] transition-all duration-200 placeholder:text-tma-hint/60;
+        }
+        .tma-input:focus {
+            @apply outline-none border-nature-green ring-1 ring-nature-green/20 bg-white;
+        }
+        .section-label {
+            @apply px-1 pb-2 text-[12px] font-bold text-nature-green/80 uppercase tracking-[0.05em];
+        }
+        .native-row {
+            @apply flex items-center justify-between p-4 bg-white/80 border-b border-earth-border/40 active:bg-nature-green/5 transition-colors;
+        }
+    </style>
+<style>
+        body {
+            min-height: 100dvh;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="flex flex-col">
+<header class="sticky top-0 z-50 bg-tma-bg/90 backdrop-blur-md px-4 py-4 flex items-center justify-between">
+<button class="flex items-center gap-1 text-nature-green">
+<span class="material-symbols-outlined text-[22px]">chevron_left</span>
+<span class="text-[17px]">Back</span>
+</button>
+<h1 class="text-[17px] font-semibold">Checkout</h1>
+<div class="w-16"></div>
+</header>
+<main class="flex-1 pb-40 px-4">
+<div class="max-w-md mx-auto w-full pt-2">
+<div class="mb-8">
+<h2 class="section-label">Payment Method</h2>
+<div class="rounded-2xl overflow-hidden border border-earth-border bg-white/40">
+<button class="native-row w-full">
+<div class="flex items-center gap-3">
+<div class="w-10 h-6 bg-black rounded flex items-center justify-center">
+<img alt="Apple Pay" class="h-3.5 invert" src="https://lh3.googleusercontent.com/aida-public/AB6AXuApNiAGM56z71YsptQBdmDebZX9g3f95LAHVxHvTmpcT5rXHAjb12EICzXrNbY7K3JaTQvnJuccyldMbM2Nf3bRKhjT__sI2hV2HzlSvFwr7K9zprAb8EEOt-LE-1sa_TEqEKJ_ggd9-4ICb4QpjEgzxyI2yK0CgTZptNoXk3VdmgGa145gSVfcoPYRLpZjXjRDvlxeSQVB4qnOph8H-FzLVUNV59GkwsgCobHOOAZ9Xkl9BzinEPH5cUHCvrRbWBAcdMSufUf-A_U"/>
+</div>
+<span class="text-[16px] font-medium">Apple Pay</span>
+</div>
+<span class="material-symbols-outlined text-tma-hint text-lg">chevron_right</span>
+</button>
+<button class="native-row w-full border-b-0">
+<div class="flex items-center gap-3">
+<div class="w-10 h-6 bg-white border border-earth-border rounded flex items-center justify-center">
+<span class="material-symbols-outlined text-nature-green text-[18px]">account_balance_wallet</span>
+</div>
+<span class="text-[16px] font-medium">Telegram Wallet</span>
+</div>
+<span class="material-symbols-outlined text-tma-hint text-lg">chevron_right</span>
+</button>
+</div>
+</div>
+<div class="mb-8">
+<h2 class="section-label">Shipping Details</h2>
+<div class="space-y-3">
+<div class="grid grid-cols-2 gap-3">
+<input class="tma-input" placeholder="First Name" type="text" value="Alex"/>
+<input class="tma-input" placeholder="Last Name" type="text" value="Reed"/>
+</div>
+<input class="tma-input" placeholder="Shipping Address" type="text" value="221B Baker Street"/>
+<div class="grid grid-cols-2 gap-3">
+<input class="tma-input" placeholder="City" type="text" value="London"/>
+<input class="tma-input" placeholder="Postal Code" type="text" value="NW1 6XE"/>
+</div>
+</div>
+</div>
+<div class="mb-10">
+<h2 class="section-label">Order Summary</h2>
+<div class="bg-white/60 rounded-2xl p-5 border border-earth-border">
+<div class="flex items-center gap-4 mb-5">
+<div class="flex -space-x-3 overflow-hidden">
+<div class="inline-block h-9 w-9 rounded-full ring-2 ring-white bg-sage/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px] text-nature-green">apparel</span>
+</div>
+<div class="inline-block h-9 w-9 rounded-full ring-2 ring-white bg-gray-100 flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px] text-nature-green">checkroom</span>
+</div>
+<div class="inline-block h-9 w-9 rounded-full ring-2 ring-white bg-gray-100 flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px] text-nature-green">shopping_bag</span>
+</div>
+</div>
+<p class="text-[15px] font-medium text-tma-text">3 items in cart</p>
+</div>
+<div class="space-y-3 pt-4 border-t border-earth-border/40">
+<div class="flex justify-between text-[14px]">
+<span class="text-tma-hint">Subtotal</span>
+<span class="font-medium">$535.00</span>
+</div>
+<div class="flex justify-between text-[14px]">
+<span class="text-tma-hint">Shipping</span>
+<span class="text-nature-green font-medium">Free</span>
+</div>
+<div class="flex justify-between text-[18px] font-bold mt-2 pt-3 border-t border-earth-border/40">
+<span>Total</span>
+<span class="text-nature-green">$535.00</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<div class="fixed bottom-0 left-0 right-0 p-6 bg-tma-bg/95 backdrop-blur-xl border-t border-earth-border/30">
+<div class="max-w-md mx-auto w-full">
+<button class="w-full bg-nature-green text-white font-bold text-[17px] py-4.5 rounded-2xl flex items-center justify-center gap-2 active:opacity-90 active:scale-[0.98] transition-all shadow-xl shadow-nature-green/20">
+<span>Pay $535.00</span>
+</button>
+<div class="mt-4 flex items-center justify-center gap-1.5 opacity-60">
+<span class="material-symbols-outlined text-[14px]">lock</span>
+<span class="text-[11px] uppercase tracking-widest font-bold">Secured by Telegram</span>
+</div>
+</div>
+<div class="h-4"></div>
+</div>
+
+</body></html>

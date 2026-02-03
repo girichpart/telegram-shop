@@ -5,7 +5,8 @@ import Product from './pages/Product.jsx';
 import Cart from './pages/Cart.jsx';
 import Checkout from './pages/Checkout.jsx';
 import Track from './pages/Track.jsx';
-import Header from './components/Header.jsx';
+import Success from './pages/Success.jsx';
+import { CartProvider } from './context/CartContext.jsx';
 
 function App() {
   useEffect(() => {
@@ -16,18 +17,18 @@ function App() {
   }, []);
 
   return (
-    <Router>
-      <div className="min-h-screen bg-black text-white">
-        <Header />
+    <CartProvider>
+      <Router>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/product/:id" element={<Product />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/track" element={<Track />} />
+          <Route path="/success" element={<Success />} />
         </Routes>
-      </div>
-    </Router>
+      </Router>
+    </CartProvider>
   );
 }
 

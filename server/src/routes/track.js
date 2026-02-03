@@ -9,14 +9,17 @@ router.get('/', async (req, res) => {
   }
 
   try {
-    const orders = await Order.find({ phone }).select(' _id status totalAmount createdAt delivery paymentStatus');
+    const orders = await Order.find({ phone }).select('_id status totalAmount createdAt updatedAt delivery paymentStatus payment');
     res.json(orders.map(order => ({
       id: order._id.toString(),
       status: order.status,
       total: order.totalAmount,
-      createdAt: order.createdAt.toISOString(),
+      createdAt: order.createdAt?.toISOString?.() || null,
+      updatedAt: order.updatedAt?.toISOString?.() || null,
       delivery: order.delivery,
-      paymentStatus: order.paymentStatus
+      deliveryStatus: order.delivery?.status || 'created',
+      trackingNumber: order.delivery?.trackingNumber || null,
+      paymentStatus: order.paymentStatus || order.payment?.status || 'pending'
     })));
   } catch (err) {
     res.status(500).json({ error: 'Ошибка поиска заказов' });

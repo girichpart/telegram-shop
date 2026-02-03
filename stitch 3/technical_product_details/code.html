@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>grått | Product Detail</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        "primary-tg": "#0088cc",
+                        "stone-light": "#f2f2f0",
+                        "earth-dark": "#1c1b1a",
+                        "earth-muted": "#57534e",
+                        "sage": "#78716c",
+                        "brand-accent": "#c2410c"
+                    },
+                    fontFamily: {
+                        "sans": ["Inter", "sans-serif"]
+                    }
+                },
+            },
+        }
+    </script>
+<style type="text/tailwindcss">
+        @layer base {
+            body {
+                @apply bg-stone-light text-earth-dark font-sans selection:bg-primary-tg/20;
+                -webkit-tap-highlight-color: transparent;
+            }
+        }
+        ::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+<style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="min-h-screen">
+<div class="max-w-md mx-auto relative flex flex-col pb-32">
+<header class="sticky top-0 z-50 flex items-center bg-stone-light/90 backdrop-blur-md px-4 py-3 justify-between">
+<button class="flex items-center text-primary-tg font-medium gap-1">
+<span class="material-symbols-outlined !text-2xl">chevron_left</span>
+<span class="text-lg">Back</span>
+</button>
+<h2 class="text-lg font-bold tracking-tight text-earth-dark lowercase">grått</h2>
+<div class="w-16 flex justify-end">
+<button class="text-primary-tg">
+<span class="material-symbols-outlined">share</span>
+</button>
+</div>
+</header>
+<div class="relative w-full aspect-[3/4] px-4 mb-6">
+<div class="w-full h-full rounded-2xl overflow-hidden bg-white shadow-sm ring-1 ring-black/5">
+<img alt="Long Sleeve Shirt with back graphic" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAySLzfcBwvCMJ9cV9omevc4dER4mt8wTxr7mt05TomvljRiWSRwiISEIXA4EOiKweJsHQu8J2VjWHVFICmtAyaC19MJF2615yX-jI9aAAygTPd1Jz1mM9f7Z8X56vGSDAj9ZmgGgtGBCUleG47bBckMx92GE_xE1Zvzh8Nw-IcgItO8x9GEDfTfzWZGCbWWjQynpFqzKqioKcdVEPVnWqJA_o66Sf7hso5UXr3MnoW-F-JODDajBfAsEf9vTs7iJcZB18nXce2zBs"/>
+</div>
+</div>
+<div class="px-6">
+<div class="mb-6">
+<p class="text-[11px] font-bold text-sage uppercase tracking-wider mb-1">Essential Layer / SS24</p>
+<h1 class="text-2xl font-bold tracking-tight text-earth-dark uppercase italic">"a garment as a mark"</h1>
+<p class="text-xl font-medium text-earth-muted mt-1">$85.00</p>
+</div>
+<div class="mb-8">
+<p class="text-[10px] font-bold text-earth-dark/40 uppercase tracking-widest mb-3">Select Size</p>
+<div class="flex gap-2">
+<button class="flex-1 py-3 rounded-xl border border-earth-dark/10 bg-white font-medium text-sm active:bg-stone-200 transition-colors">S</button>
+<button class="flex-1 py-3 rounded-xl border-2 border-primary-tg bg-primary-tg/5 font-bold text-sm text-primary-tg">M</button>
+<button class="flex-1 py-3 rounded-xl border border-earth-dark/10 bg-white font-medium text-sm active:bg-stone-200 transition-colors">L</button>
+<button class="flex-1 py-3 rounded-xl border border-earth-dark/10 bg-white font-medium text-sm active:bg-stone-200 transition-colors">XL</button>
+</div>
+</div>
+<div class="space-y-8">
+<section>
+<h3 class="text-[10px] font-bold text-earth-dark/40 uppercase tracking-widest mb-4 border-b border-earth-dark/5 pb-2">Technical Details</h3>
+<div class="grid grid-cols-1 gap-4">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-sage text-xl">straighten</span>
+<span class="text-sm font-medium">Fit</span>
+</div>
+<span class="text-sm font-semibold">Oversized Boxy</span>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-sage text-xl">texture</span>
+<span class="text-sm font-medium">Material</span>
+</div>
+<span class="text-sm font-semibold">240gsm Organic Cotton</span>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-sage text-xl">palette</span>
+<span class="text-sm font-medium">Graphic</span>
+</div>
+<span class="text-sm font-semibold text-brand-accent">Screen Printed Red</span>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-sage text-xl">eco</span>
+<span class="text-sm font-medium">Origin</span>
+</div>
+<span class="text-sm font-semibold">Made in Portugal</span>
+</div>
+</div>
+</section>
+<section>
+<h3 class="text-[10px] font-bold text-earth-dark/40 uppercase tracking-widest mb-3">Description</h3>
+<p class="text-[15px] leading-relaxed text-earth-muted">
+                        A premium long-sleeve tee featuring a signature red fluid graphic on the rear. Designed with raw edge hems and a relaxed, drop-shoulder silhouette for effortless urban movement. Part of the 'grått' core collection.
+                    </p>
+</section>
+</div>
+</div>
+<div class="fixed bottom-0 left-0 right-0 p-4 bg-stone-light/95 backdrop-blur-xl border-t border-earth-dark/5 max-w-md mx-auto z-50">
+<button class="w-full bg-[#0088cc] text-white h-[54px] rounded-xl font-bold text-base flex items-center justify-center gap-2 active:opacity-90 transition-opacity">
+<span>Add to Cart</span>
+<span class="opacity-40 font-normal">|</span>
+<span>$85.00</span>
+</button>
+</div>
+</div>
+
+</body></html>
