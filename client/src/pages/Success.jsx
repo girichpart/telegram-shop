@@ -16,26 +16,26 @@ const Success = () => {
   }, [orderId]);
 
   return (
-    <div className="min-h-screen bg-[#f0f2f0] text-[#222222]">
-      <header className="sticky top-0 z-50 bg-[#f0f2f0]/80 backdrop-blur-md px-4 py-3 flex items-center justify-between border-b border-[#d1d5db]/30">
+    <div className="min-h-screen" style={{ background: 'var(--tma-bg)', color: 'var(--tma-text)' }}>
+      <header className="sticky top-0 z-50 backdrop-blur-md px-4 py-3 flex items-center justify-between border-b" style={{ background: 'var(--tma-bg)', borderColor: 'var(--tma-border)' }}>
         <div className="flex items-center gap-3" onClick={() => navigate(-1)}>
-          <span className="material-symbols-outlined text-[#248bfe] cursor-pointer">arrow_back_ios</span>
-          <span className="text-[#248bfe] font-medium">Back</span>
+          <span className="material-symbols-outlined cursor-pointer" style={{ color: 'var(--tma-link)' }}>chevron_left</span>
+          <span className="font-medium" style={{ color: 'var(--tma-link)' }}>Back</span>
         </div>
-        <h1 className="text-[17px] font-semibold">Order Complete</h1>
+        <h1 className="text-lg font-medium tracking-tight lowercase">grått</h1>
         <div className="w-10"></div>
       </header>
 
-      <main className="max-w-md mx-auto w-full pt-6 pb-20 px-4">
-        <h2 className="section-label">Спасибо за заказ</h2>
-        <p className="text-sm text-[#8e8e93] mt-2">Оплата может быть тестовой, если интеграции выключены.</p>
+      <main className="max-w-md mx-auto w-full pt-8 pb-20 px-5">
+        <h2 className="section-label">Заказ оформлен</h2>
+        <p className="text-sm mt-2" style={{ color: 'var(--tma-muted)' }}>Оплата может быть тестовой, если интеграции выключены.</p>
 
         {order && (
-          <div className="mt-6 bg-white border border-[#d1d5db] rounded-2xl p-4">
+          <div className="mt-6 bg-white border rounded-2xl p-5" style={{ borderColor: 'var(--tma-border)' }}>
             <p className="text-sm font-semibold">Номер заказа: {order._id}</p>
-            <p className="text-xs text-[#8e8e93] mt-1">Статус: {order.status}</p>
-            <p className="text-xs text-[#8e8e93] mt-1">Оплата: {order.paymentStatus}</p>
-            <p className="text-xs text-[#8e8e93] mt-1">Доставка: {order.delivery?.status || 'created'}</p>
+            <p className="text-xs mt-1" style={{ color: 'var(--tma-muted)' }}>Статус: {order.status}</p>
+            <p className="text-xs mt-1" style={{ color: 'var(--tma-muted)' }}>Оплата: {order.paymentStatus}</p>
+            <p className="text-xs mt-1" style={{ color: 'var(--tma-muted)' }}>Доставка: {order.delivery?.status || 'created'}</p>
             <div className="mt-4 space-y-2 text-sm">
               {order.products.map(item => (
                 <div key={item.productId} className="flex items-center justify-between">
@@ -44,13 +44,13 @@ const Success = () => {
                 </div>
               ))}
             </div>
-            <div className="mt-4 text-sm text-[#8e8e93]">Итого: {order.totalAmount} ₽</div>
+            <div className="mt-4 text-sm" style={{ color: 'var(--tma-muted)' }}>Итого: {order.totalAmount} ₽</div>
           </div>
         )}
 
-        <div className="mt-6 flex flex-col gap-3">
-          <Link to="/" className="w-full bg-[#4a5d4e] text-white font-semibold py-4 rounded-2xl flex items-center justify-center">В каталог</Link>
-          <Link to="/track" className="w-full border border-[#d1d5db] rounded-2xl py-4 flex items-center justify-center">Отслеживание</Link>
+        <div className="mt-8 flex flex-col gap-4">
+          <Link to="/" className="w-full text-white font-semibold py-4 rounded-2xl flex items-center justify-center" style={{ background: 'var(--tma-button)' }}>В каталог</Link>
+          <Link to="/track" className="w-full border rounded-2xl py-4 flex items-center justify-center" style={{ borderColor: 'var(--tma-border)' }}>Отслеживание</Link>
         </div>
       </main>
     </div>

@@ -2,17 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700&family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
-  --tma-bg: #f0f2f0;
-  --tma-text: #222222;
-  --tma-hint: #8e8e93;
-  --tma-link: #248bfe;
-  --tma-button: #248bfe;
-  --earth-border: #d1d5db;
-  --nature-green: #4a5d4e;
-  --sage: #8ba88e;
+  --tma-bg: #f2f2f2;
+  --tma-surface: #ffffff;
+  --tma-text: #1a1c1a;
+  --tma-muted: #707571;
+  --tma-link: #4A5D4E;
+  --tma-button: #4A5D4E;
+  --tma-accent: #0088cc;
+  --tma-card: #ffffff;
+  --tma-border: #C5CCC7;
+  --tma-hero-overlay: rgba(0, 0, 0, 0.45);
 }
 
 * {
@@ -33,28 +35,51 @@ body {
 
 .tma-input {
   width: 100%;
-  background: #fff;
-  border: 1px solid var(--earth-border);
-  border-radius: 16px;
-  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid var(--tma-border);
+  border-radius: 12px;
+  padding: 14px 16px;
   font-size: 16px;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
 .tma-input:focus {
   outline: none;
-  border-color: var(--nature-green);
-  box-shadow: 0 0 0 2px rgba(74, 93, 78, 0.15);
+  border-color: var(--tma-accent);
+  box-shadow: 0 0 0 2px rgba(0, 136, 204, 0.12);
+  background: #fff;
 }
 
 .section-label {
   font-size: 12px;
-  font-weight: 600;
-  color: rgba(74, 93, 78, 0.7);
+  font-weight: 700;
+  color: var(--tma-muted);
   text-transform: uppercase;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.05em;
 }
 
-.bottom-safe {
-  padding-bottom: 120px;
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.fade-in {
+  animation: fadeIn 0.6s ease both;
+}
+
+.rise-in {
+  animation: riseIn 0.7s ease both;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes riseIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
 }

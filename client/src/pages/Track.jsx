@@ -27,39 +27,39 @@ const Track = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f0f2f0] text-[#222222]">
-      <header className="sticky top-0 z-50 bg-[#f0f2f0]/80 backdrop-blur-md px-4 py-3 flex items-center justify-between border-b border-[#d1d5db]/30">
+    <div className="min-h-screen" style={{ background: 'var(--tma-bg)', color: 'var(--tma-text)' }}>
+      <header className="sticky top-0 z-50 backdrop-blur-md px-4 py-3 flex items-center justify-between border-b" style={{ background: 'var(--tma-bg)', borderColor: 'var(--tma-border)' }}>
         <div className="flex items-center gap-3" onClick={() => navigate(-1)}>
-          <span className="material-symbols-outlined text-[#248bfe] cursor-pointer">arrow_back_ios</span>
-          <span className="text-[#248bfe] font-medium">Back</span>
+          <span className="material-symbols-outlined cursor-pointer" style={{ color: 'var(--tma-link)' }}>chevron_left</span>
+          <span className="font-medium" style={{ color: 'var(--tma-link)' }}>Back</span>
         </div>
-        <h1 className="text-[17px] font-semibold">Tracking</h1>
+        <h1 className="text-lg font-medium tracking-tight lowercase">grått</h1>
         <div className="w-10"></div>
       </header>
 
-      <main className="max-w-md mx-auto w-full pt-6 pb-20 px-4">
+      <main className="max-w-md mx-auto w-full pt-8 pb-20 px-5">
         <h2 className="section-label">Track by phone</h2>
-        <div className="mt-4 flex flex-col gap-3">
+        <div className="mt-5 flex flex-col gap-4">
           <input type="tel" placeholder="Номер телефона" value={phone} onChange={e => setPhone(e.target.value)} className="tma-input" />
-          <button onClick={handleTrack} className="w-full border border-[#d1d5db] rounded-xl py-3 text-sm font-medium">Проверить</button>
+          <button onClick={handleTrack} className="w-full border rounded-xl py-3 text-sm font-medium" style={{ borderColor: 'var(--tma-border)' }}>Проверить</button>
         </div>
         {error && <p className="mt-3 text-xs text-red-500">{error}</p>}
 
-        <div className="mt-6 space-y-3">
+        <div className="mt-8 space-y-4">
           {orders.map(order => (
-            <div key={order.id} className="bg-white border border-[#d1d5db] rounded-2xl p-4">
+            <div key={order.id} className="bg-white border rounded-2xl p-5" style={{ borderColor: 'var(--tma-border)' }}>
               <p className="text-sm font-semibold">Заказ #{order.id}</p>
-              <p className="text-xs text-[#8e8e93] mt-1">Статус: {order.status}</p>
-              <p className="text-xs text-[#8e8e93] mt-1">Оплата: {order.paymentStatus}</p>
-              <p className="text-xs text-[#8e8e93] mt-1">Доставка: {order.deliveryStatus}</p>
+              <p className="text-xs mt-1" style={{ color: 'var(--tma-muted)' }}>Статус: {order.status}</p>
+              <p className="text-xs mt-1" style={{ color: 'var(--tma-muted)' }}>Оплата: {order.paymentStatus}</p>
+              <p className="text-xs mt-1" style={{ color: 'var(--tma-muted)' }}>Доставка: {order.deliveryStatus}</p>
               {order.trackingNumber && (
-                <p className="text-xs text-[#8e8e93] mt-1">Трек: {order.trackingNumber}</p>
+                <p className="text-xs mt-1" style={{ color: 'var(--tma-muted)' }}>Трек: {order.trackingNumber}</p>
               )}
-              <p className="text-xs text-[#8e8e93] mt-1">Сумма: {order.total} ₽</p>
+              <p className="text-xs mt-1" style={{ color: 'var(--tma-muted)' }}>Сумма: {order.total} ₽</p>
             </div>
           ))}
           {hasSearched && orders.length === 0 && !error && (
-            <p className="text-[#8e8e93] text-sm">Пока нет заказов для этого номера.</p>
+            <p className="text-sm" style={{ color: 'var(--tma-muted)' }}>Пока нет заказов для этого номера.</p>
           )}
         </div>
       </main>

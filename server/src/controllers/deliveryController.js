@@ -7,7 +7,10 @@ let cachedToken = null;
 let cachedTokenExpiresAt = 0;
 
 const getCdekToken = async () => {
-  if (!process.env.CDEK_AUTH_URL || !process.env.CDEK_CLIENT_ID || !process.env.CDEK_CLIENT_SECRET) {
+  const clientId = process.env.CDEK_CLIENT_ID || process.env.CDEK_ACCOUNT;
+  const clientSecret = process.env.CDEK_CLIENT_SECRET || process.env.CDEK_PASSWORD;
+
+  if (!process.env.CDEK_AUTH_URL || !clientId || !clientSecret) {
     throw new Error('CDEK auth env not set');
   }
 
@@ -18,8 +21,8 @@ const getCdekToken = async () => {
 
   const payload = new URLSearchParams({
     grant_type: 'client_credentials',
-    client_id: process.env.CDEK_CLIENT_ID,
-    client_secret: process.env.CDEK_CLIENT_SECRET
+    client_id: clientId,
+    client_secret: clientSecret
   });
 
   const res = await axios.post(process.env.CDEK_AUTH_URL, payload.toString(), {

@@ -5,6 +5,10 @@ import { Link } from 'react-router-dom';
 const Home = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const heroType = import.meta.env.VITE_HOME_MEDIA_TYPE || 'image';
+  const heroUrl = import.meta.env.VITE_HOME_MEDIA_URL;
+  const heroTitle = import.meta.env.VITE_HOME_MEDIA_TITLE || 'Elements Shop';
+  const heroSubtitle = import.meta.env.VITE_HOME_MEDIA_SUBTITLE || 'New Arrival / Systems';
 
   useEffect(() => {
     api.get('/api/products')
@@ -18,99 +22,121 @@ const Home = () => {
       });
   }, []);
 
-  const hero = products[0];
-  const list = products.slice(1);
+  const heroMedia = heroUrl || products?.[0]?.images?.[0];
+  const resolvedHeroType = heroUrl ? heroType : 'image';
 
   return (
-    <div className="min-h-screen bg-[#1a1c1a] text-[#e0e0e0] font-['Space_Grotesk']">
-      <header className="sticky top-0 z-50 border-b border-white/5" style={{ background: 'rgba(26, 28, 26, 0.85)', backdropFilter: 'blur(8px)' }}>
-        <div className="flex items-center justify-between h-14 px-4">
-          <span className="text-sm font-bold tracking-tight uppercase">Elements Shop</span>
-          <div className="flex items-center gap-4">
+    <div className="min-h-screen font-['Inter']" style={{ background: 'var(--tma-bg)', color: 'var(--tma-text)' }}>
+      <header className="sticky top-0 z-50 border-b" style={{ background: 'var(--tma-bg)', borderColor: 'var(--tma-border)' }}>
+        <div className="flex items-center justify-between h-14 px-5">
+          <div className="w-10"></div>
+          <h1 className="text-lg font-medium tracking-tight lowercase">grått</h1>
+          <div className="flex items-center justify-end w-10">
             <button className="flex items-center justify-center" aria-label="Search">
-              <span className="material-symbols-outlined text-[22px]">search</span>
+              <span className="material-symbols-outlined text-[20px] font-light">search</span>
             </button>
-            <Link to="/cart" className="flex items-center justify-center relative" aria-label="Cart">
-              <span className="material-symbols-outlined text-[22px]">shopping_bag</span>
-            </Link>
           </div>
         </div>
       </header>
 
-      <main className="flex flex-col w-full pb-24">
-        {loading && (
-          <div className="p-6 text-sm text-white/60">Загрузка...</div>
-        )}
-
-        {!loading && hero && (
-          <section className="mb-12">
-            <Link to={`/product/${hero._id}`} className="block">
-              <div className="relative w-full aspect-[4/5] bg-[#e5e7eb] overflow-hidden">
-                <div
-                  className="absolute inset-0 bg-cover bg-center"
-                  style={{ backgroundImage: `url(${hero.images?.[0] || 'https://via.placeholder.com/800'})` }}
-                />
-                <div className="absolute inset-x-0 bottom-0 p-6 bg-gradient-to-t from-black/60 to-transparent">
-                  <p className="text-[10px] text-[#4a5d4e] font-bold uppercase tracking-[0.2em] mb-1">New Arrival</p>
-                  <h2 className="text-2xl font-bold tracking-tight uppercase">{hero.name}</h2>
-                  <div className="mt-2 text-xs font-medium text-white/80">{hero.category || 'Tech Textile'}</div>
-                </div>
+      <main className="flex flex-col w-full pb-28">
+        {heroMedia && (
+          <section className="px-5 pt-5">
+            <div className="relative overflow-hidden rounded-[28px] aspect-[4/5] bg-black/10 shadow-sm fade-in">
+              {resolvedHeroType === 'video' ? (
+                <video
+                  className="absolute inset-0 h-full w-full object-cover"
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                >
+                  <source src={heroMedia} type="video/mp4" />
+                </video>
+              ) : (
+                <img src={heroMedia} alt={heroTitle} className="absolute inset-0 h-full w-full object-cover" />
+              )}
+              <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0.15) 20%, var(--tma-hero-overlay) 100%)' }} />
+              <div className="absolute bottom-5 left-5 right-5 text-white rise-in">
+                <p className="text-[11px] uppercase tracking-[0.3em] text-white/70">{heroSubtitle}</p>
+                <h2 className="text-2xl font-semibold mt-2">{heroTitle}</h2>
+                <p className="text-sm text-white/70 mt-1">Curated technical layers for everyday movement.</p>
               </div>
-            </Link>
+            </div>
           </section>
         )}
 
-        {!loading && products.length === 0 && (
-          <div className="p-6 text-sm text-white/60">Товаров пока нет. Добавьте в админке.</div>
+        {loading && (
+          <div className="px-6 pt-6 text-sm" style={{ color: 'var(--tma-muted)' }}>Загрузка...</div>
         )}
 
-        <div className="px-0">
-          {list.map(product => (
-            <article key={product._id} className="flex flex-col mb-12">
-              <Link to={`/product/${product._id}`} className="block">
-                <div className="bg-[#f4f4f4] aspect-square overflow-hidden flex items-center justify-center relative">
+        <section className="flex flex-col gap-6 px-5 pt-6">
+          {products.map(product => (
+            <article key={product._id} className="flex flex-col bg-white rounded-[28px] overflow-hidden border shadow-sm" style={{ borderColor: 'var(--tma-border)' }}>
+              <Link to={`/product/${product._id}`}>
+                <div className="bg-[#e8e8e8] aspect-[3/4] overflow-hidden flex items-center justify-center relative">
                   <div
-                    className="w-full h-full bg-contain bg-no-repeat bg-center mix-blend-multiply opacity-90 p-8"
-                    style={{ backgroundImage: `url(${product.images?.[0] || 'https://via.placeholder.com/600'})` }}
+                    className="w-full h-full bg-cover bg-center"
+                    style={{ backgroundImage: `url(${product.images?.[0] || 'https://via.placeholder.com/800'})` }}
                   />
                 </div>
               </Link>
-              <div className="px-4 mt-4 flex justify-between items-end">
-                <div className="flex flex-col">
-                  <h3 className="text-base font-bold uppercase tracking-tight">{product.name}</h3>
-                  <p className="text-xs text-white/50 mt-1 uppercase">{product.category || 'Accessory'}</p>
+              <div className="p-6 flex flex-col">
+                <div className="flex justify-between items-baseline mb-2">
+                  <h3 className="text-sm font-semibold uppercase tracking-wide">{product.name}</h3>
+                  <span className="text-sm font-medium">{product.price} ₽</span>
                 </div>
-                <div className="text-base font-bold text-[#4a5d4e]">{product.price} ₽</div>
+                <p className="text-[11px] uppercase tracking-wider" style={{ color: 'var(--tma-muted)' }}>
+                  {product.description || product.category || 'Technical / Neutral'}
+                </p>
               </div>
             </article>
           ))}
-        </div>
+        </section>
+
+        {!loading && products.length === 0 && (
+          <div className="px-6 pt-6 text-sm" style={{ color: 'var(--tma-muted)' }}>Товаров пока нет. Добавьте в админке.</div>
+        )}
+
+        <footer className="mt-12 px-5 pb-8">
+          <div className="rounded-[24px] border bg-white p-6" style={{ borderColor: 'var(--tma-border)' }}>
+            <div className="grid grid-cols-2 gap-6 text-sm">
+              <div className="space-y-2">
+                <p className="text-xs uppercase tracking-widest" style={{ color: 'var(--tma-muted)' }}>Customer Care</p>
+                <Link to="/info/shipping" className="block">Shipping</Link>
+                <Link to="/info/returns" className="block">Returns</Link>
+                <Link to="/info/faq" className="block">FAQ</Link>
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs uppercase tracking-widest" style={{ color: 'var(--tma-muted)' }}>Company</p>
+                <Link to="/info/about" className="block">About</Link>
+                <Link to="/info/privacy" className="block">Privacy</Link>
+                <Link to="/info/terms" className="block">Terms</Link>
+              </div>
+            </div>
+            <div className="mt-6 text-xs" style={{ color: 'var(--tma-muted)' }}>
+              Telegram mini app · demo build
+            </div>
+          </div>
+        </footer>
       </main>
 
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-[#1a1c1a] border-t border-white/5">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t" style={{ background: 'var(--tma-surface)', borderColor: 'var(--tma-border)' }}>
         <div className="flex items-center justify-around h-16 px-4">
-          <button className="flex flex-col items-center justify-center text-[#4a5d4e]">
-            <span className="material-symbols-outlined text-[26px]">grid_view</span>
-            <span className="text-[9px] font-medium mt-0.5 uppercase">Shop</span>
+          <button className="flex flex-col items-center justify-center text-black">
+            <span className="material-symbols-outlined text-[24px]">home</span>
           </button>
-          <button className="flex flex-col items-center justify-center text-white/40">
-            <span className="material-symbols-outlined text-[26px]">explore</span>
-            <span className="text-[9px] font-medium mt-0.5 uppercase">Atlas</span>
+          <button className="flex flex-col items-center justify-center text-black/30">
+            <span className="material-symbols-outlined text-[24px]">search</span>
           </button>
-          <button className="flex flex-col items-center justify-center text-white/40">
-            <span className="material-symbols-outlined text-[26px]">bookmark</span>
-            <span className="text-[9px] font-medium mt-0.5 uppercase">Saved</span>
-          </button>
-          <button className="flex flex-col items-center justify-center text-white/40">
-            <span className="material-symbols-outlined text-[26px]">account_circle</span>
-            <span className="text-[9px] font-medium mt-0.5 uppercase">User</span>
+          <Link to="/cart" className="flex flex-col items-center justify-center text-black/30">
+            <span className="material-symbols-outlined text-[24px]">favorite</span>
+          </Link>
+          <button className="flex flex-col items-center justify-center text-black/30">
+            <span className="material-symbols-outlined text-[24px]">person</span>
           </button>
         </div>
       </nav>
-
-      <div className="fixed left-0 top-1/2 -rotate-90 origin-left pointer-events-none opacity-20 hidden sm:block">
-        <span className="text-[8px] tracking-[0.5em] text-white whitespace-nowrap uppercase">GEO: 35.6895° N / SIG: ACTIVE</span>
-      </div>
     </div>
   );
 };

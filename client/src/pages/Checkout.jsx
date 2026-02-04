@@ -91,107 +91,108 @@ const Checkout = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#f0f2f0] text-[#222222]">
-      <header className="sticky top-0 z-50 bg-[#f0f2f0]/80 backdrop-blur-md px-4 py-3 flex items-center justify-between border-b border-[#d1d5db]/30">
-        <div className="flex items-center gap-3">
-          <span className="material-symbols-outlined text-[#248bfe] cursor-pointer">arrow_back_ios</span>
-          <span className="text-[#248bfe] font-medium">Back</span>
-        </div>
+    <div className="min-h-screen flex flex-col" style={{ background: 'var(--tma-bg)', color: 'var(--tma-text)' }}>
+      <header className="sticky top-0 z-50 backdrop-blur-md px-4 py-4 flex items-center justify-between border-b" style={{ background: 'var(--tma-bg)', borderColor: 'var(--tma-border)' }}>
+        <button className="flex items-center gap-1" style={{ color: 'var(--tma-link)' }} onClick={() => navigate(-1)}>
+          <span className="material-symbols-outlined text-[22px]">chevron_left</span>
+          <span className="text-[17px]">Back</span>
+        </button>
         <h1 className="text-[17px] font-semibold">Checkout</h1>
-        <div className="w-10"></div>
+        <div className="w-16"></div>
       </header>
 
-      <main className="flex-1 pb-44">
-        <div className="max-w-md mx-auto w-full pt-6">
-          <div className="mb-8">
-            <h2 className="section-label px-4 pb-2">Express Checkout</h2>
-            <div className="bg-white border-y border-[#d1d5db]">
-              <button className="w-full flex items-center justify-between p-4 active:bg-gray-50 transition-colors border-b border-[#d1d5db]/50">
+      <main className="flex-1 pb-44 px-4">
+        <div className="max-w-md mx-auto w-full pt-4">
+          <div className="mb-10">
+            <h2 className="section-label">Payment Method</h2>
+            <div className="rounded-2xl overflow-hidden border bg-white/50" style={{ borderColor: 'var(--tma-border)' }}>
+              <button className="w-full flex items-center justify-between p-4 bg-white/90 border-b active:bg-black/5 transition-colors" style={{ borderColor: 'var(--tma-border)' }}>
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-6 bg-black rounded flex items-center justify-center">
-                    <img alt="Apple Pay" className="h-4 invert" src="https://lh3.googleusercontent.com/aida-public/AB6AXuApNiAGM56z71YsptQBdmDebZX9g3f95LAHVxHvTmpcT5rXHAjb12EICzXrNbY7K3JaTQvnJuccyldMbM2Nf3bRKhjT__sI2hV2HzlSvFwr7K9zprAb8EEOt-LE-1sa_TEqEKJ_ggd9-4ICb4QpjEgzxyI2yK0CgTZptNoXk3VdmgGa145gSVfcoPYRLpZjXjRDvlxeSQVB4qnOph8H-FzLVUNV59GkwsgCobHOOAZ9Xkl9BzinEPH5cUHCvrRbWBAcdMSufUf-A_U" />
+                    <img alt="Apple Pay" className="h-3.5 invert" src="https://lh3.googleusercontent.com/aida-public/AB6AXuApNiAGM56z71YsptQBdmDebZX9g3f95LAHVxHvTmpcT5rXHAjb12EICzXrNbY7K3JaTQvnJuccyldMbM2Nf3bRKhjT__sI2hV2HzlSvFwr7K9zprAb8EEOt-LE-1sa_TEqEKJ_ggd9-4ICb4QpjEgzxyI2yK0CgTZptNoXk3VdmgGa145gSVfcoPYRLpZjXjRDvlxeSQVB4qnOph8H-FzLVUNV59GkwsgCobHOOAZ9Xkl9BzinEPH5cUHCvrRbWBAcdMSufUf-A_U" />
                   </div>
-                  <span className="text-[16px]">Apple Pay</span>
+                  <span className="text-[16px] font-medium">Apple Pay</span>
                 </div>
-                <span className="material-symbols-outlined text-[#8e8e93]">chevron_right</span>
+                <span className="material-symbols-outlined text-lg" style={{ color: 'var(--tma-muted)' }}>chevron_right</span>
               </button>
-              <button className="w-full flex items-center justify-between p-4 active:bg-gray-50 transition-colors">
+              <button className="w-full flex items-center justify-between p-4 bg-white/90 active:bg-black/5 transition-colors">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-6 bg-white border border-gray-200 rounded flex items-center justify-center">
-                    <span className="material-symbols-outlined text-[#4a5d4e] text-lg">account_balance_wallet</span>
+                  <div className="w-10 h-6 bg-white border rounded flex items-center justify-center" style={{ borderColor: 'var(--tma-border)' }}>
+                    <span className="material-symbols-outlined text-[18px]" style={{ color: 'var(--tma-link)' }}>account_balance_wallet</span>
                   </div>
-                  <span className="text-[16px]">Telegram Wallet</span>
+                  <span className="text-[16px] font-medium">Telegram Wallet</span>
                 </div>
-                <span className="material-symbols-outlined text-[#8e8e93]">chevron_right</span>
+                <span className="material-symbols-outlined text-lg" style={{ color: 'var(--tma-muted)' }}>chevron_right</span>
               </button>
             </div>
           </div>
 
-          <div className="mb-8 px-4">
-            <h2 className="section-label px-0">Shipping Information</h2>
+          <div className="mb-10">
+            <h2 className="section-label">Shipping Details</h2>
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-4">
                 <input className="tma-input" placeholder="First Name" type="text" value={firstName} onChange={e => setFirstName(e.target.value)} />
                 <input className="tma-input" placeholder="Last Name" type="text" value={lastName} onChange={e => setLastName(e.target.value)} />
               </div>
               <input className="tma-input" placeholder="Email" type="email" value={email} onChange={e => setEmail(e.target.value)} />
               <input className="tma-input" placeholder="Phone" type="tel" value={phone} onChange={e => setPhone(e.target.value)} />
               <input className="tma-input" placeholder="Shipping Address" type="text" value={address} onChange={e => setAddress(e.target.value)} />
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-4">
                 <input className="tma-input" placeholder="City" type="text" value={city} onChange={e => setCity(e.target.value)} />
                 <input className="tma-input" placeholder="Postal Code" type="text" value={postalCode} onChange={e => setPostalCode(e.target.value)} />
               </div>
-              <div className="flex gap-2">
-                <button onClick={() => setDeliveryType('pvz')} className={deliveryType === 'pvz' ? 'flex-1 py-3 rounded-xl border-2 border-[#4a5d4e] bg-[#4a5d4e]/10 font-bold text-sm text-[#4a5d4e]' : 'flex-1 py-3 rounded-xl border border-[#d1d5db] bg-white font-medium text-sm'}>PVZ</button>
-                <button onClick={() => setDeliveryType('courier')} className={deliveryType === 'courier' ? 'flex-1 py-3 rounded-xl border-2 border-[#4a5d4e] bg-[#4a5d4e]/10 font-bold text-sm text-[#4a5d4e]' : 'flex-1 py-3 rounded-xl border border-[#d1d5db] bg-white font-medium text-sm'}>Courier</button>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setDeliveryType('pvz')}
+                  className={deliveryType === 'pvz' ? 'flex-1 py-3 rounded-xl border-2 font-bold text-sm' : 'flex-1 py-3 rounded-xl border bg-white/60 font-medium text-sm'}
+                  style={deliveryType === 'pvz' ? { borderColor: 'var(--tma-button)', color: 'var(--tma-button)', background: 'rgba(74, 93, 78, 0.1)' } : { borderColor: 'var(--tma-border)' }}
+                >
+                  PVZ
+                </button>
+                <button
+                  onClick={() => setDeliveryType('courier')}
+                  className={deliveryType === 'courier' ? 'flex-1 py-3 rounded-xl border-2 font-bold text-sm' : 'flex-1 py-3 rounded-xl border bg-white/60 font-medium text-sm'}
+                  style={deliveryType === 'courier' ? { borderColor: 'var(--tma-button)', color: 'var(--tma-button)', background: 'rgba(74, 93, 78, 0.1)' } : { borderColor: 'var(--tma-border)' }}
+                >
+                  Courier
+                </button>
               </div>
-              <button onClick={handleCalculateDelivery} className="w-full border border-[#d1d5db] rounded-xl py-3 text-sm font-medium">Calculate delivery</button>
+              <button onClick={handleCalculateDelivery} className="w-full border rounded-xl py-3 text-sm font-medium" style={{ borderColor: 'var(--tma-border)' }}>Calculate delivery</button>
               {etaDays && (
-                <p className="text-xs text-[#8e8e93]">Delivery: {deliveryCost} ₽, {etaDays} days</p>
+                <p className="text-xs" style={{ color: 'var(--tma-muted)' }}>Delivery: {deliveryCost} ₽, {etaDays} days</p>
               )}
             </div>
           </div>
 
-          <div className="mb-8 px-4">
-            <h2 className="section-label px-0">Card Details</h2>
-            <div className="space-y-4">
-              <div className="relative">
-                <input className="tma-input pr-12" placeholder="Card Number" type="text" />
-                <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-[#8e8e93]">credit_card</span>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <input className="tma-input" placeholder="MM / YY" type="text" />
-                <input className="tma-input" placeholder="CVC" type="password" />
-              </div>
-            </div>
-          </div>
-
-          <div className="px-4 mb-10">
-            <h2 className="section-label px-0">Order Summary</h2>
-            <div className="bg-white rounded-2xl p-4 border border-[#d1d5db]">
-              <div className="flex items-center gap-4 mb-4">
+          <div className="mb-12">
+            <h2 className="section-label">Order Summary</h2>
+            <div className="bg-white/70 rounded-2xl p-6 border" style={{ borderColor: 'var(--tma-border)' }}>
+              <div className="flex items-center gap-4 mb-6">
                 <div className="flex -space-x-3 overflow-hidden">
-                  <div className="inline-block h-8 w-8 rounded-full ring-2 ring-white bg-gray-100 flex items-center justify-center">
-                    <span className="material-symbols-outlined text-xs text-[#4a5d4e]">checkroom</span>
+                  <div className="inline-block h-9 w-9 rounded-full ring-2 ring-white bg-black/5 flex items-center justify-center">
+                    <span className="material-symbols-outlined text-[18px]" style={{ color: 'var(--tma-link)' }}>apparel</span>
                   </div>
-                  <div className="inline-block h-8 w-8 rounded-full ring-2 ring-white bg-gray-100 flex items-center justify-center">
-                    <span className="material-symbols-outlined text-xs text-[#4a5d4e]">apparel</span>
+                  <div className="inline-block h-9 w-9 rounded-full ring-2 ring-white bg-gray-100 flex items-center justify-center">
+                    <span className="material-symbols-outlined text-[18px]" style={{ color: 'var(--tma-link)' }}>checkroom</span>
+                  </div>
+                  <div className="inline-block h-9 w-9 rounded-full ring-2 ring-white bg-gray-100 flex items-center justify-center">
+                    <span className="material-symbols-outlined text-[18px]" style={{ color: 'var(--tma-link)' }}>shopping_bag</span>
                   </div>
                 </div>
-                <p className="text-[14px] text-[#8e8e93]">{items.length} items in cart</p>
+                <p className="text-[15px] font-medium">{items.length} items in cart</p>
               </div>
-              <div className="space-y-2 pt-2 border-t border-[#d1d5db]/30">
+              <div className="space-y-3 pt-4 border-t" style={{ borderColor: 'var(--tma-border)' }}>
                 <div className="flex justify-between text-[14px]">
-                  <span className="text-[#8e8e93]">Subtotal</span>
-                  <span>{total} ₽</span>
+                  <span style={{ color: 'var(--tma-muted)' }}>Subtotal</span>
+                  <span className="font-medium">{total} ₽</span>
                 </div>
                 <div className="flex justify-between text-[14px]">
-                  <span className="text-[#8e8e93]">Shipping</span>
-                  <span>{deliveryCost} ₽</span>
+                  <span style={{ color: 'var(--tma-muted)' }}>Shipping</span>
+                  <span className="font-medium" style={{ color: 'var(--tma-link)' }}>{deliveryCost === 0 ? 'Free' : `${deliveryCost} ₽`}</span>
                 </div>
-                <div className="flex justify-between text-[17px] font-bold mt-2 pt-2 border-t border-[#d1d5db]/30">
+                <div className="flex justify-between text-[18px] font-bold mt-2 pt-3 border-t" style={{ borderColor: 'var(--tma-border)' }}>
                   <span>Total</span>
-                  <span className="text-[#4a5d4e]">{total + deliveryCost} ₽</span>
+                  <span style={{ color: 'var(--tma-link)' }}>{total + deliveryCost} ₽</span>
                 </div>
               </div>
             </div>
@@ -199,17 +200,18 @@ const Checkout = () => {
         </div>
       </main>
 
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-[#f0f2f0]/95 backdrop-blur-xl border-t border-[#d1d5db]/50">
+      <div className="fixed bottom-0 left-0 right-0 p-6 backdrop-blur-xl border-t" style={{ background: 'var(--tma-bg)', borderColor: 'var(--tma-border)' }}>
         <div className="max-w-md mx-auto w-full">
           {error && <p className="text-xs text-red-500 mb-2">{error}</p>}
-          <button onClick={handleSubmit} className="w-full bg-[#4a5d4e] text-white font-semibold py-4 rounded-2xl flex items-center justify-center gap-2 active:opacity-90 active:scale-[0.99] transition-all shadow-lg shadow-[#4a5d4e]/20" disabled={loading}>
+          <button onClick={handleSubmit} className="w-full text-white font-bold text-[17px] py-4.5 rounded-2xl flex items-center justify-center gap-2 active:opacity-90 active:scale-[0.98] transition-all shadow-xl shadow-black/10" style={{ background: 'var(--tma-button)' }} disabled={loading}>
             <span>{loading ? 'Paying...' : `Pay ${total + deliveryCost} ₽`}</span>
           </button>
-          <div className="mt-4 flex items-center justify-center gap-1.5">
-            <span className="material-symbols-outlined text-[14px] text-[#8e8e93]">lock</span>
-            <span className="text-[11px] text-[#8e8e93] uppercase tracking-widest font-medium">Secured by Telegram</span>
+          <div className="mt-5 flex items-center justify-center gap-1.5 opacity-60">
+            <span className="material-symbols-outlined text-[14px]">lock</span>
+            <span className="text-[11px] uppercase tracking-widest font-bold">Secured by Telegram</span>
           </div>
         </div>
+        <div className="h-4"></div>
       </div>
     </div>
   );

@@ -6,6 +6,7 @@ import Cart from './pages/Cart.jsx';
 import Checkout from './pages/Checkout.jsx';
 import Track from './pages/Track.jsx';
 import Success from './pages/Success.jsx';
+import Info from './pages/Info.jsx';
 import { CartProvider } from './context/CartContext.jsx';
 
 function App() {
@@ -26,6 +27,7 @@ function App() {
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/track" element={<Track />} />
           <Route path="/success" element={<Success />} />
+          <Route path="/info/:slug" element={<Info />} />
         </Routes>
       </Router>
     </CartProvider>
