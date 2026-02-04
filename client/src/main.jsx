@@ -3,15 +3,15 @@ import ReactDOM from 'react-dom/client';
 import App from './App.jsx';
 import './index.css';
 
+const env = import.meta.env;
+
 const themeVars = {
-  '--tma-bg': import.meta.env.VITE_THEME_BG,
-  '--tma-text': import.meta.env.VITE_THEME_TEXT,
-  '--tma-muted': import.meta.env.VITE_THEME_MUTED,
-  '--tma-link': import.meta.env.VITE_THEME_LINK,
-  '--tma-button': import.meta.env.VITE_THEME_BUTTON,
-  '--tma-accent': import.meta.env.VITE_THEME_ACCENT,
-  '--tma-card': import.meta.env.VITE_THEME_CARD,
-  '--tma-border': import.meta.env.VITE_THEME_BORDER
+  '--primary': env.VITE_PNS_PRIMARY || env.VITE_THEME_TEXT || '#0f0f0f',
+  '--secondary': env.VITE_PNS_SECONDARY || env.VITE_THEME_BG || '#f6f6f2',
+  '--primary-foreground': env.VITE_PNS_PRIMARY_FOREGROUND || '#ffffff',
+  '--secondary-foreground': env.VITE_PNS_SECONDARY_FOREGROUND || '#1a1a1a',
+  '--header-height': env.VITE_PNS_HEADER_HEIGHT || '64px',
+  '--notification-height': env.VITE_PNS_NOTIFICATION_HEIGHT || '0px'
 };
 
 Object.entries(themeVars).forEach(([key, value]) => {

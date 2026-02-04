@@ -1,22 +1,52 @@
 import React from 'react';
-import { Link, NavLink } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext.jsx';
 
-const Header = () => {
+const Header = ({ variant = 'site', title = 'Elements', showNotice = true, onBack }) => {
   const { count } = useCart();
 
+  if (variant === 'back') {
+    return (
+      <header className="sticky top-0 z-30 w-full border-b border-black/10 bg-[--secondary]">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3">
+          <button
+            type="button"
+            onClick={onBack}
+            className="flex items-center gap-2 text-[11px] uppercase tracking-[0.25em]"
+          >
+            <span className="inline-block h-[1px] w-6 bg-[--primary]"></span>
+            Back
+          </button>
+          <p className="heading-6 uppercase tracking-[0.3em]">{title}</p>
+          <Link to="/cart" className="text-[11px] uppercase tracking-[0.25em]">
+            Cart ({count})
+          </Link>
+        </div>
+      </header>
+    );
+  }
+
   return (
-    <header className="fixed top-0 left-0 right-0 z-20 backdrop-blur-lg border-b border-white/10 bg-ink/70">
-      <div className="mx-auto max-w-6xl px-6 py-4 flex items-center justify-between">
-        <Link to="/" className="text-lg tracking-[0.3em] uppercase font-semibold">.solutions</Link>
-        <nav className="flex items-center gap-6 text-sm">
-          <NavLink to="/track" className="text-sand/70 hover:text-sand">Tracking</NavLink>
-          <NavLink to="/cart" className="text-sand/70 hover:text-sand">
-            Cart <span className="ml-1 text-lime">({count})</span>
-          </NavLink>
-        </nav>
-      </div>
-    </header>
+    <div className="fixed top-0 z-30 w-full">
+      {showNotice && (
+        <div className="flex w-full items-center justify-between bg-[--primary] px-5 py-[10px] text-[11px] uppercase tracking-[0.3em] text-[--primary-foreground]">
+          <p className="truncate">Join ICC and receive 10% off your first order</p>
+          <span className="text-[10px] opacity-60">×</span>
+        </div>
+      )}
+      <nav className="isolate flex items-center justify-between border-b border-black/10 bg-[--secondary] px-5 py-3 text-[11px] uppercase tracking-[0.25em]">
+        <div className="flex items-center gap-4">
+          <Link to="/">Shop</Link>
+          <Link to="/track">Tracking</Link>
+        </div>
+        <Link to="/" className="heading-6 uppercase tracking-[0.3em]">
+          {title}
+        </Link>
+        <div className="flex items-center gap-4">
+          <Link to="/cart">Cart ({count})</Link>
+        </div>
+      </nav>
+    </div>
   );
 };
 

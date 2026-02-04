@@ -37,9 +37,20 @@ function App() {
     }
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('admin_token');
+    setToken(null);
+  };
+
   useEffect(() => {
     fetchProducts();
   }, []);
+
+  useEffect(() => {
+    if (!token) return;
+    api.get('/api/admin/me')
+      .catch(() => handleLogout());
+  }, [token]);
 
   const filtered = useMemo(() => {
     if (!query) return products;
@@ -48,6 +59,13 @@ function App() {
       (p.category || '').toLowerCase().includes(query.toLowerCase())
     );
   }, [products, query]);
+
+  const stats = useMemo(() => {
+    const totalProducts = products.length;
+    const totalStock = products.reduce((sum, p) => sum + (p.stock || 0), 0);
+    const totalValue = products.reduce((sum, p) => sum + (p.price || 0) * (p.stock || 0), 0);
+    return { totalProducts, totalStock, totalValue };
+  }, [products]);
 
   const handleSelect = (product) => {
     setSelectedId(product._id);
@@ -102,10 +120,8 @@ function App() {
 
   const handleDelete = async () => {
     if (!selectedId) return;
-
     setSaving(true);
     setError('');
-
     try {
       await api.delete(`/api/products/${selectedId}`);
       await fetchProducts();
@@ -136,7 +152,6 @@ function App() {
     if (!files || files.length === 0) return;
     setUploading(true);
     setError('');
-
     try {
       for (const file of files) {
         const formData = new FormData();
@@ -164,7 +179,6 @@ function App() {
       return;
     }
     setError('');
-
     try {
       const res = await api.post('/api/admin/login', { login, password });
       localStorage.setItem('admin_token', res.data.token);
@@ -175,176 +189,171 @@ function App() {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('admin_token');
-    setToken(null);
-  };
-
   if (!token) {
     return (
-      <div className="min-h-screen bg-admin">
-        <div className="mx-auto max-w-md px-6 py-24">
-          <div className="panel">
-            <p className="text-xs uppercase tracking-[0.3em] text-black/50">.solutions</p>
-            <h1 className="text-2xl font-semibold mt-2">Вход в админку</h1>
-            <div className="mt-6 grid gap-3">
-              <input
-                type="text"
-                placeholder="Логин"
-                value={login}
-                onChange={e => setLogin(e.target.value)}
-                className="input"
-              />
-              <input
-                type="password"
-                placeholder="Пароль"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                className="input"
-              />
-            </div>
-            {error && <p className="mt-4 text-sm text-red-500">{error}</p>}
-            <button onClick={handleLogin} className="btn mt-6 w-full">Войти</button>
-            <p className="mt-4 text-xs text-black/50">Данные берутся из server/.env (ADMIN_LOGIN, ADMIN_PASSWORD).</p>
+      <div className="admin-auth">
+        <div className="admin-auth-card">
+          <p className="admin-eyebrow">Elements Admin</p>
+          <h1 className="admin-title">Вход в админку</h1>
+          <div className="admin-form-grid">
+            <input
+              type="text"
+              placeholder="Логин"
+              value={login}
+              onChange={e => setLogin(e.target.value)}
+              className="admin-input"
+            />
+            <input
+              type="password"
+              placeholder="Пароль"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              className="admin-input"
+            />
           </div>
+          {error && <p className="admin-error">{error}</p>}
+          <button onClick={handleLogin} className="admin-btn primary">Войти</button>
+          <p className="admin-hint">Данные берутся из `server/.env` (ADMIN_LOGIN, ADMIN_PASSWORD).</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-admin">
-      <div className="mx-auto max-w-6xl px-6 py-8">
-        <header className="flex flex-wrap items-center justify-between gap-4">
+    <div className="admin-shell">
+      <aside className="admin-sidebar">
+        <div>
+          <p className="admin-eyebrow">Elements Admin</p>
+          <h2 className="admin-subtitle">Catalog</h2>
+        </div>
+        <button onClick={handleNew} className="admin-btn ghost">Новый товар</button>
+        <button onClick={handleSeed} className="admin-btn ghost">Добавить тестовый</button>
+        <input
+          type="text"
+          placeholder="Поиск по названию"
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          className="admin-input"
+        />
+        <div className="admin-list">
+          {loading && <p className="admin-muted">Загрузка...</p>}
+          {!loading && filtered.length === 0 && <p className="admin-muted">Нет товаров</p>}
+          {filtered.map(product => (
+            <button
+              key={product._id}
+              onClick={() => handleSelect(product)}
+              className={selectedId === product._id ? 'admin-card active' : 'admin-card'}
+            >
+              <div>
+                <p className="admin-card-title">{product.name}</p>
+                <p className="admin-card-subtitle">{product.category || 'Без категории'}</p>
+              </div>
+              <p className="admin-card-price">{product.price} ₽</p>
+            </button>
+          ))}
+        </div>
+      </aside>
+
+      <main className="admin-main">
+        <header className="admin-header">
           <div>
-            <p className="text-xs uppercase tracking-[0.3em] text-black/50">.solutions</p>
-            <h1 className="text-2xl font-semibold">Админка товара</h1>
+            <p className="admin-eyebrow">Product control</p>
+            <h1 className="admin-title">Админка товаров</h1>
           </div>
-          <div className="flex items-center gap-3">
-            <button onClick={handleNew} className="btn-outline">Новый товар</button>
-            <button onClick={handleSeed} className="btn-outline">Добавить тестовый</button>
-            <button onClick={handleSave} className="btn" disabled={saving}>
+          <div className="admin-actions">
+            {selectedId && <button onClick={handleDelete} className="admin-btn danger">Удалить</button>}
+            <button onClick={handleSave} className="admin-btn primary" disabled={saving}>
               {saving ? 'Сохраняю...' : 'Сохранить'}
             </button>
-            <button onClick={handleLogout} className="btn-outline">Выйти</button>
+            <button onClick={handleLogout} className="admin-btn ghost">Выйти</button>
           </div>
         </header>
 
-        <div className="mt-8 grid lg:grid-cols-[1.1fr_1.4fr] gap-6">
-          <aside className="panel">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-medium">Товары</h2>
-              <span className="tag">{products.length}</span>
+        <section className="admin-stats">
+          <div className="admin-stat">
+            <p className="admin-stat-label">Всего товаров</p>
+            <p className="admin-stat-value">{stats.totalProducts}</p>
+          </div>
+          <div className="admin-stat">
+            <p className="admin-stat-label">Суммарный остаток</p>
+            <p className="admin-stat-value">{stats.totalStock}</p>
+          </div>
+          <div className="admin-stat">
+            <p className="admin-stat-label">Потенциальная выручка</p>
+            <p className="admin-stat-value">{stats.totalValue.toLocaleString('ru-RU')} ₽</p>
+          </div>
+        </section>
+
+        <section className="admin-panel">
+          <div className="admin-panel-head">
+            <h2>Карточка товара</h2>
+            <p className="admin-muted">{selectedId ? `ID: ${selectedId}` : 'Новый товар'}</p>
+          </div>
+          <div className="admin-grid">
+            <input
+              type="text"
+              placeholder="Название"
+              value={form.name}
+              onChange={e => setForm({ ...form, name: e.target.value })}
+              className="admin-input"
+            />
+            <div className="admin-grid two">
+              <input
+                type="number"
+                placeholder="Цена"
+                value={form.price}
+                onChange={e => setForm({ ...form, price: e.target.value })}
+                className="admin-input"
+              />
+              <input
+                type="number"
+                placeholder="Остаток"
+                value={form.stock}
+                onChange={e => setForm({ ...form, stock: e.target.value })}
+                className="admin-input"
+              />
             </div>
             <input
               type="text"
-              placeholder="Поиск по названию"
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-              className="input mt-4"
+              placeholder="Категория"
+              value={form.category}
+              onChange={e => setForm({ ...form, category: e.target.value })}
+              className="admin-input"
             />
+            <textarea
+              placeholder="Описание"
+              value={form.description}
+              onChange={e => setForm({ ...form, description: e.target.value })}
+              className="admin-input textarea"
+            />
+            <div>
+              <p className="admin-muted">Изображения</p>
+              <div className="admin-upload">
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={e => handleUpload(Array.from(e.target.files || []))}
+                />
+                {uploading && <span className="admin-muted">Загружаю...</span>}
+              </div>
+            </div>
+          </div>
 
-            <div className="mt-4 space-y-3 max-h-[540px] overflow-auto">
-              {loading && <p className="text-sm text-black/50">Загрузка...</p>}
-              {!loading && filtered.length === 0 && (
-                <p className="text-sm text-black/50">Нет товаров</p>
-              )}
-              {filtered.map(product => (
-                <button
-                  key={product._id}
-                  onClick={() => handleSelect(product)}
-                  className={selectedId === product._id ? 'card card-active' : 'card'}
-                >
-                  <div>
-                    <p className="font-medium">{product.name}</p>
-                    <p className="text-xs text-black/50">{product.category || 'Без категории'}</p>
-                  </div>
-                  <p className="text-sm">{product.price} ₽</p>
-                </button>
+          {form.images.length > 0 && (
+            <div className="admin-images">
+              {form.images.map(url => (
+                <div key={url} className="admin-image">
+                  <img src={url} alt="preview" />
+                  <button onClick={() => handleRemoveImage(url)} type="button">Удалить</button>
+                </div>
               ))}
             </div>
-          </aside>
+          )}
 
-          <section className="panel">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-medium">Карточка товара</h2>
-              {selectedId && <button onClick={handleDelete} className="btn-danger">Удалить</button>}
-            </div>
-
-            <div className="mt-4 grid gap-4">
-              <input
-                type="text"
-                placeholder="Название"
-                value={form.name}
-                onChange={e => setForm({ ...form, name: e.target.value })}
-                className="input"
-              />
-              <div className="grid sm:grid-cols-2 gap-3">
-                <input
-                  type="number"
-                  placeholder="Цена"
-                  value={form.price}
-                  onChange={e => setForm({ ...form, price: e.target.value })}
-                  className="input"
-                />
-                <input
-                  type="number"
-                  placeholder="Остаток"
-                  value={form.stock}
-                  onChange={e => setForm({ ...form, stock: e.target.value })}
-                  className="input"
-                />
-              </div>
-              <input
-                type="text"
-                placeholder="Категория"
-                value={form.category}
-                onChange={e => setForm({ ...form, category: e.target.value })}
-                className="input"
-              />
-              <textarea
-                placeholder="Описание"
-                value={form.description}
-                onChange={e => setForm({ ...form, description: e.target.value })}
-                className="input min-h-[120px]"
-              />
-              <div>
-                <label className="text-sm font-medium">Изображения</label>
-                <div className="mt-2 flex items-center gap-3">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={e => handleUpload(Array.from(e.target.files || []))}
-                  />
-                  {uploading && <span className="text-xs text-black/50">Загружаю...</span>}
-                </div>
-              </div>
-            </div>
-
-            {form.images.length > 0 && (
-              <div className="mt-6">
-                <p className="text-xs text-black/50">Превью</p>
-                <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {form.images.map(url => (
-                    <div key={url} className="relative h-28 rounded-2xl overflow-hidden border border-black/10 bg-black/5">
-                      <img src={url} alt="preview" className="h-full w-full object-cover" />
-                      <button
-                        onClick={() => handleRemoveImage(url)}
-                        className="absolute top-2 right-2 rounded-full bg-white/80 px-2 py-1 text-xs"
-                      >
-                        Удалить
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {error && <p className="mt-4 text-sm text-red-500">{error}</p>}
-          </section>
-        </div>
-      </div>
+          {error && <p className="admin-error">{error}</p>}
+        </section>
+      </main>
     </div>
   );
 }

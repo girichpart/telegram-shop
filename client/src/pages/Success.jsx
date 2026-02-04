@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useSearchParams, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../api';
+import SiteShell from '../components/SiteShell.jsx';
 
 const Success = () => {
   const navigate = useNavigate();
@@ -16,44 +17,58 @@ const Success = () => {
   }, [orderId]);
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--tma-bg)', color: 'var(--tma-text)' }}>
-      <header className="sticky top-0 z-50 backdrop-blur-md px-4 py-3 flex items-center justify-between border-b" style={{ background: 'var(--tma-bg)', borderColor: 'var(--tma-border)' }}>
-        <div className="flex items-center gap-3" onClick={() => navigate(-1)}>
-          <span className="material-symbols-outlined cursor-pointer" style={{ color: 'var(--tma-link)' }}>chevron_left</span>
-          <span className="font-medium" style={{ color: 'var(--tma-link)' }}>Back</span>
+    <SiteShell headerVariant="back" headerTitle="Success" showFooter onBack={() => navigate(-1)}>
+      <div className="px-5 pb-16">
+        <div className="mt-8 border border-black/10 bg-white p-6">
+          <p className="text-[11px] uppercase tracking-[0.3em] opacity-60">Order confirmed</p>
+          <h1 className="heading-4 mt-3">Спасибо! Заказ оформлен.</h1>
+          <p className="mt-3 text-[11px] uppercase tracking-[0.25em] opacity-60">
+            Оплата может быть тестовой, если интеграции выключены.
+          </p>
         </div>
-        <h1 className="text-lg font-medium tracking-tight lowercase">grått</h1>
-        <div className="w-10"></div>
-      </header>
-
-      <main className="max-w-md mx-auto w-full pt-8 pb-20 px-5">
-        <h2 className="section-label">Заказ оформлен</h2>
-        <p className="text-sm mt-2" style={{ color: 'var(--tma-muted)' }}>Оплата может быть тестовой, если интеграции выключены.</p>
 
         {order && (
-          <div className="mt-6 bg-white border rounded-2xl p-5" style={{ borderColor: 'var(--tma-border)' }}>
-            <p className="text-sm font-semibold">Номер заказа: {order._id}</p>
-            <p className="text-xs mt-1" style={{ color: 'var(--tma-muted)' }}>Статус: {order.status}</p>
-            <p className="text-xs mt-1" style={{ color: 'var(--tma-muted)' }}>Оплата: {order.paymentStatus}</p>
-            <p className="text-xs mt-1" style={{ color: 'var(--tma-muted)' }}>Доставка: {order.delivery?.status || 'created'}</p>
-            <div className="mt-4 space-y-2 text-sm">
+          <div className="mt-6 border border-black/10 bg-white p-6">
+            <p className="text-[12px] uppercase tracking-[0.25em]">Order ID</p>
+            <p className="mt-2 text-[11px] uppercase tracking-[0.25em] opacity-60">{order._id}</p>
+            <div className="mt-4 grid gap-2 text-[11px] uppercase tracking-[0.25em] opacity-70">
+              <p>Status: {order.status}</p>
+              <p>Payment: {order.paymentStatus}</p>
+              <p>Delivery: {order.delivery?.status || 'created'}</p>
+            </div>
+            <div className="mt-5 border-t border-black/10 pt-4">
               {order.products.map(item => (
-                <div key={item.productId} className="flex items-center justify-between">
+                <div key={item.productId} className="flex items-center justify-between text-[11px] uppercase tracking-[0.25em]">
                   <span>{item.name} × {item.quantity}</span>
                   <span>{item.price * item.quantity} ₽</span>
                 </div>
               ))}
+              <div className="mt-4 flex items-center justify-between text-[12px] uppercase tracking-[0.25em]">
+                <span>Total</span>
+                <span>{order.totalAmount} ₽</span>
+              </div>
             </div>
-            <div className="mt-4 text-sm" style={{ color: 'var(--tma-muted)' }}>Итого: {order.totalAmount} ₽</div>
           </div>
         )}
 
-        <div className="mt-8 flex flex-col gap-4">
-          <Link to="/" className="w-full text-white font-semibold py-4 rounded-2xl flex items-center justify-center" style={{ background: 'var(--tma-button)' }}>В каталог</Link>
-          <Link to="/track" className="w-full border rounded-2xl py-4 flex items-center justify-center" style={{ borderColor: 'var(--tma-border)' }}>Отслеживание</Link>
+        <div className="mt-8 grid gap-3">
+          <Link
+            to="/"
+            className="flex items-center justify-between rounded-md bg-black px-5 py-4 text-[12px] uppercase tracking-[0.3em] text-white"
+          >
+            <span>Back to shop</span>
+            <span>→</span>
+          </Link>
+          <Link
+            to="/track"
+            className="flex items-center justify-between border border-black/10 bg-white px-5 py-4 text-[12px] uppercase tracking-[0.3em]"
+          >
+            <span>Track order</span>
+            <span>→</span>
+          </Link>
         </div>
-      </main>
-    </div>
+      </div>
+    </SiteShell>
   );
 };
 

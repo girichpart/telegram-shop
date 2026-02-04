@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import SiteShell from '../components/SiteShell.jsx';
 
 const infoMap = {
   shipping: {
@@ -16,7 +17,7 @@ const infoMap = {
   },
   about: {
     title: 'About',
-    body: 'grått is a compact technical shop for modern essentials. Built to work perfectly inside Telegram.'
+    body: 'Elements is a compact technical shop built for Telegram. The interface is tuned for quick ordering.'
   },
   privacy: {
     title: 'Privacy',
@@ -37,26 +38,14 @@ const Info = () => {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--tma-bg)', color: 'var(--tma-text)' }}>
-      <header
-        className="sticky top-0 z-50 backdrop-blur-md px-4 py-3 flex items-center justify-between border-b"
-        style={{ borderColor: 'var(--tma-border)', background: 'var(--tma-bg)' }}
-      >
-        <div className="flex items-center gap-3" onClick={() => navigate(-1)}>
-          <span className="material-symbols-outlined" style={{ color: 'var(--tma-link)' }}>chevron_left</span>
-          <span style={{ color: 'var(--tma-link)' }} className="font-medium">Back</span>
+    <SiteShell headerVariant="back" headerTitle={info.title} showFooter onBack={() => navigate(-1)}>
+      <div className="px-5 pb-16">
+        <div className="mt-8 border border-black/10 bg-white p-6">
+          <p className="text-[11px] uppercase tracking-[0.3em] opacity-60">{info.title}</p>
+          <p className="mt-4 text-[13px] leading-relaxed opacity-70">{info.body}</p>
         </div>
-        <h1 className="text-lg font-medium tracking-tight lowercase">grått</h1>
-        <div className="w-10"></div>
-      </header>
-
-      <main className="max-w-md mx-auto w-full pt-6 pb-20 px-5">
-        <h2 className="section-label">{info.title}</h2>
-        <div className="mt-4 rounded-2xl border bg-white p-5 text-sm leading-relaxed" style={{ borderColor: 'var(--tma-border)' }}>
-          {info.body}
-        </div>
-      </main>
-    </div>
+      </div>
+    </SiteShell>
   );
 };
 

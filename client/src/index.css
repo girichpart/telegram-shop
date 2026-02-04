@@ -1,85 +1,51 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;700&family=Inter:wght@300;400;500;600;700&display=swap');
-
 :root {
-  --tma-bg: #f2f2f2;
-  --tma-surface: #ffffff;
-  --tma-text: #1a1c1a;
-  --tma-muted: #707571;
-  --tma-link: #4A5D4E;
-  --tma-button: #4A5D4E;
-  --tma-accent: #0088cc;
-  --tma-card: #ffffff;
-  --tma-border: #C5CCC7;
-  --tma-hero-overlay: rgba(0, 0, 0, 0.45);
-}
-
-* {
-  box-sizing: border-box;
+  --primary: #0f0f0f;
+  --secondary: #f6f6f2;
+  --primary-foreground: #ffffff;
+  --secondary-foreground: #1a1a1a;
+  --header-height: 64px;
+  --notification-height: 0px;
 }
 
 body {
-  margin: 0;
-  background: var(--tma-bg);
-  color: var(--tma-text);
-  font-family: 'Inter', sans-serif;
-  -webkit-tap-highlight-color: transparent;
+  background: var(--secondary);
+  color: var(--primary);
 }
 
-::-webkit-scrollbar {
-  display: none;
+.pns-shell {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
 }
 
-.tma-input {
-  width: 100%;
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid var(--tma-border);
-  border-radius: 12px;
-  padding: 14px 16px;
-  font-size: 16px;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+.pns-main {
+  flex: 1;
 }
 
-.tma-input:focus {
-  outline: none;
-  border-color: var(--tma-accent);
-  box-shadow: 0 0 0 2px rgba(0, 136, 204, 0.12);
-  background: #fff;
+.pns-fade-up {
+  animation: pnsFadeUp 0.8s ease both;
 }
 
-.section-label {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--tma-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+.pns-fade-in {
+  animation: pnsFadeIn 0.6s ease both;
 }
 
-.pb-safe {
-  padding-bottom: env(safe-area-inset-bottom);
+@keyframes pnsFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.hide-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-
-.fade-in {
-  animation: fadeIn 0.6s ease both;
-}
-
-.rise-in {
-  animation: riseIn 0.7s ease both;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes riseIn {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
+@keyframes pnsFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
