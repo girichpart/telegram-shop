@@ -25,11 +25,16 @@ const Checkout = () => {
   const [firstName, setFirstName] = useState(draft.firstName || '');
   const [lastName, setLastName] = useState(draft.lastName || '');
   const [city, setCity] = useState(draft.city || '');
+  const [cityCode, setCityCode] = useState(draft.cityCode || '');
   const [deliveryProvider, setDeliveryProvider] = useState(draft.deliveryProvider || 'cdek');
   const [pvzList, setPvzList] = useState([]);
+  const [pvzQuery, setPvzQuery] = useState('');
   const [selectedPvz, setSelectedPvz] = useState(draft.selectedPvz || '');
+  const [pvzOpen, setPvzOpen] = useState(false);
   const [deliveryCost, setDeliveryCost] = useState(0);
   const [etaDays, setEtaDays] = useState(null);
+  const [citySuggestions, setCitySuggestions] = useState([]);
+  const [cityLoading, setCityLoading] = useState(false);
   const [settings, setSettings] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -40,6 +45,16 @@ const Checkout = () => {
   ]), [settings]);
   const enabledProviders = deliveryOptions.filter(option => option.enabled).map(option => option.id);
   const paymentYookassaEnabled = settings?.paymentYookassaEnabled !== false;
+  const paymentLabel = settings?.paymentYookassaLabel || 'Оплатить через ЮKassa';
+  const paymentImageUrl = settings?.paymentYookassaImageUrl || '';
+  const filteredPvzList = useMemo(() => {
+    if (!pvzQuery) return pvzList;
+    const needle = pvzQuery.toLowerCase();
+    return pvzList.filter(item => {
+      const address = item.address || item.location?.address || item.code || item.id || '';
+      return String(address).toLowerCase().includes(needle);
+    });
+  }, [pvzList, pvzQuery]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -49,17 +64,20 @@ const Checkout = () => {
         firstName,
         lastName,
         city,
+        cityCode,
         selectedPvz,
         deliveryProvider
       };
       localStorage.setItem('checkout_draft_v1', JSON.stringify(payload));
     }, 300);
     return () => clearTimeout(timer);
-  }, [phone, email, firstName, lastName, city, selectedPvz, deliveryProvider]);
+  }, [phone, email, firstName, lastName, city, cityCode, selectedPvz, deliveryProvider]);
 
   useEffect(() => {
     setPvzList([]);
     setSelectedPvz('');
+    setPvzQuery('');
+    setPvzOpen(false);
     setDeliveryCost(0);
     setEtaDays(null);
   }, [deliveryProvider]);
@@ -154,21 +172,6 @@ const Checkout = () => {
     }
   };
 
-  const botUsername = import.meta.env.VITE_TELEGRAM_BOT_USERNAME;
-  const handleOpenBot = () => {
-    if (!botUsername) {
-      setError('Укажите VITE_TELEGRAM_BOT_USERNAME в .env');
-      return;
-    }
-    const url = `https://t.me/${botUsername}`;
-    const tg = window.Telegram?.WebApp;
-    if (tg?.openTelegramLink) {
-      tg.openTelegramLink(url);
-    } else {
-      window.open(url, '_blank');
-    }
-  };
-
   useEffect(() => {
     if (!city) {
       setPvzList([]);
@@ -179,25 +182,69 @@ const Checkout = () => {
     }
 
     const timer = setTimeout(async () => {
+      setError('');
+      let calcFailed = false;
+      let pvzLoaded = false;
+      try {
+        const pvz = await api.get('/api/delivery/pvz', { params: { city, cityCode, provider: deliveryProvider } });
+        const list = Array.isArray(pvz.data) ? pvz.data : [];
+        setPvzList(list);
+        pvzLoaded = list.length > 0;
+      } catch (err) {
+        console.error(err);
+        setPvzList([]);
+      }
+
       try {
         const res = await api.post('/api/delivery/calculate', {
           city,
+          cityCode,
           type: 'pvz',
           provider: deliveryProvider
         });
         setDeliveryCost(res.data.cost || 0);
         setEtaDays(res.data.etaDays || null);
-
-        const pvz = await api.get('/api/delivery/pvz', { params: { city, provider: deliveryProvider } });
-        setPvzList(Array.isArray(pvz.data) ? pvz.data : []);
       } catch (err) {
         console.error(err);
-        setError('Не удалось рассчитать доставку');
+        setDeliveryCost(0);
+        setEtaDays(null);
+        calcFailed = true;
+      }
+
+      if (calcFailed) {
+        if (!pvzLoaded) {
+          setError('Не удалось рассчитать доставку');
+        }
       }
     }, 600);
 
     return () => clearTimeout(timer);
-  }, [city, deliveryProvider]);
+  }, [city, cityCode, deliveryProvider]);
+
+  useEffect(() => {
+    const query = city.trim();
+    if (!query || query.length < 2) {
+      setCitySuggestions([]);
+      setCityLoading(false);
+      return;
+    }
+
+    setCityLoading(true);
+    const timer = setTimeout(async () => {
+      try {
+        const res = await api.get('/api/delivery/cities', { params: { q: query } });
+        const list = Array.isArray(res.data) ? res.data : [];
+        setCitySuggestions(list);
+      } catch (err) {
+        console.error(err);
+        setCitySuggestions([]);
+      } finally {
+        setCityLoading(false);
+      }
+    }, 180);
+
+    return () => clearTimeout(timer);
+  }, [city]);
 
   const handleSubmit = async () => {
     if (!phone) {
@@ -271,9 +318,14 @@ const Checkout = () => {
     }
   };
 
+  const footerSpacer = paymentYookassaEnabled ? 160 : 120;
+
   return (
     <SiteShell headerVariant="site" headerTitle="grått" showFooter={false} showNotice>
-      <div className="px-5 pb-32">
+      <div
+        className="px-5"
+        style={{ paddingBottom: `calc(${footerSpacer}px + env(safe-area-inset-bottom))` }}
+      >
         <div className="mt-8 grid gap-10">
           {!telegramUser && (
             <div className="border border-black/10 bg-white px-4 py-3 text-[11px] uppercase tracking-[0.25em] opacity-70">
@@ -301,25 +353,6 @@ const Checkout = () => {
           <section>
             <p className="text-[11px] uppercase tracking-[0.3em] opacity-60">Доставка</p>
             <div className="mt-4 grid gap-3">
-              <div className="grid gap-2">
-                <p className="text-[10px] uppercase tracking-[0.25em] opacity-60">Способ доставки</p>
-                {enabledProviders.length > 0 ? (
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    {deliveryOptions.filter(option => option.enabled).map(option => (
-                      <button
-                        key={option.id}
-                        type="button"
-                        onClick={() => setDeliveryProvider(option.id)}
-                        className={`px-4 py-3 text-[12px] uppercase tracking-[0.2em] ${deliveryProvider === option.id ? 'btn-primary' : 'btn-outline'}`}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-[11px] uppercase tracking-[0.25em] text-red-500">Способы доставки отключены</p>
-                )}
-              </div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <input
                   className="w-full border border-black/10 bg-white px-4 py-3 text-[12px] uppercase tracking-[0.2em]"
@@ -366,42 +399,126 @@ const Checkout = () => {
                 >
                   Подтвердить номер через Telegram
                 </button>
-                <button
-                  type="button"
-                  onClick={handleOpenBot}
-                  className="btn-outline px-4 py-3 text-[12px] uppercase tracking-[0.25em]"
-                >
-                  Открыть бота
-                </button>
-                <p className="text-[10px] uppercase tracking-[0.25em] opacity-60">
-                  Нажмите /start в боте, чтобы получать уведомления.
-                </p>
+              </div>
+              <div className="grid gap-2">
+                <p className="text-[10px] uppercase tracking-[0.25em] opacity-60">Способ доставки</p>
+                {enabledProviders.length > 0 ? (
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {deliveryOptions.filter(option => option.enabled).map(option => (
+                      <button
+                        key={option.id}
+                        type="button"
+                        onClick={() => setDeliveryProvider(option.id)}
+                        className={`px-4 py-3 text-[12px] uppercase tracking-[0.2em] ${deliveryProvider === option.id ? 'btn-primary' : 'btn-outline'}`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-[11px] uppercase tracking-[0.25em] text-red-500">Способы доставки отключены</p>
+                )}
               </div>
               <input
                 className="w-full border border-black/10 bg-white px-4 py-3 text-[12px] uppercase tracking-[0.2em]"
                 placeholder="Город"
                 type="text"
                 value={city}
-                onChange={e => setCity(e.target.value)}
+                onChange={e => {
+                  setCity(e.target.value);
+                  setCityCode('');
+                  setPvzList([]);
+                  setSelectedPvz('');
+                  setPvzQuery('');
+                }}
               />
+              {(citySuggestions.length > 0 || cityLoading) && (
+                <div className="relative">
+                  <div className="absolute left-0 right-0 z-10 mt-2 max-h-56 overflow-auto border border-black/10 bg-white shadow-sm">
+                    {cityLoading && (
+                      <div className="px-4 py-3 text-[11px] uppercase tracking-[0.2em] opacity-60">
+                        Ищем города...
+                      </div>
+                    )}
+                    {citySuggestions.map(item => {
+                      const labelParts = [item.city, item.region, item.country].filter(Boolean);
+                      const label = labelParts.join(', ');
+                      return (
+                        <button
+                          key={`${item.code}-${label}`}
+                          type="button"
+                          onClick={() => {
+                            setCity(item.city);
+                            setCityCode(item.code || '');
+                            setPvzQuery('');
+                            setCitySuggestions([]);
+                          }}
+                          className="w-full px-4 py-3 text-left text-[12px] uppercase tracking-[0.2em] hover:bg-black/5"
+                        >
+                          {label}
+                        </button>
+                      );
+                    })}
+                    {!cityLoading && citySuggestions.length === 0 && (
+                      <div className="px-4 py-3 text-[11px] uppercase tracking-[0.2em] opacity-60">
+                        Город не найден
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
               {pvzList.length > 0 && (
                 <div className="grid gap-2">
                   <p className="text-[10px] uppercase tracking-[0.25em] opacity-60">
                     {deliveryProvider === 'yandex' ? 'ПВЗ Яндекс' : 'ПВЗ СДЭК'}
                   </p>
-                  <select
-                    className="w-full border border-black/10 bg-white px-4 py-3 text-[12px] uppercase tracking-[0.2em]"
-                    value={selectedPvz}
-                    onChange={e => setSelectedPvz(e.target.value)}
-                  >
-                    <option value="">Выберите ПВЗ</option>
-                    {pvzList.map(item => (
-                      <option key={item.id || item.code || item.address || item.location?.address} value={item.address || item.location?.address || item.code || item.id}>
-                        {item.address || item.location?.address || item.code || item.id}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <input
+                      className="w-full border border-black/10 bg-white px-4 py-3 text-[12px] uppercase tracking-[0.2em]"
+                      placeholder="Введите адрес ПВЗ"
+                      type="text"
+                      value={pvzQuery}
+                      onChange={e => {
+                        setPvzQuery(e.target.value);
+                        setSelectedPvz('');
+                        setPvzOpen(true);
+                      }}
+                      onFocus={() => setPvzOpen(true)}
+                      onBlur={() => setTimeout(() => setPvzOpen(false), 150)}
+                    />
+                    {pvzOpen && (
+                      <div className="absolute left-0 right-0 z-10 mt-2 max-h-56 overflow-auto border border-black/10 bg-white shadow-sm">
+                        {filteredPvzList.map(item => {
+                          const label = item.address || item.location?.address || item.code || item.id;
+                          return (
+                            <button
+                              key={item.id || item.code || item.address || item.location?.address}
+                              type="button"
+                              onClick={() => {
+                                setSelectedPvz(label);
+                                setPvzQuery(label || '');
+                                setPvzOpen(false);
+                              }}
+                              className="w-full px-4 py-3 text-left text-[12px] uppercase tracking-[0.2em] hover:bg-black/5"
+                            >
+                              {label}
+                            </button>
+                          );
+                        })}
+                        {pvzQuery && filteredPvzList.length === 0 && (
+                          <div className="px-4 py-3 text-[11px] uppercase tracking-[0.25em] opacity-60">
+                            Совпадений не найдено
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
+              )}
+              {!cityLoading && city && pvzList.length === 0 && (
+                <p className="text-[11px] uppercase tracking-[0.25em] opacity-60">
+                  ПВЗ не найдены — попробуйте выбрать город из подсказок.
+                </p>
               )}
               {etaDays && (
                 <p className="text-[11px] uppercase tracking-[0.25em] opacity-60">
@@ -411,28 +528,35 @@ const Checkout = () => {
             </div>
           </section>
 
-          {paymentYookassaEnabled ? (
-            <section>
-              <p className="text-[11px] uppercase tracking-[0.3em] opacity-60">Оплата</p>
-              <div className="mt-4 border border-black/10 bg-white p-5">
-                <div className="flex items-center justify-between text-[12px] uppercase tracking-[0.25em]">
-                  <span>ЮKassa</span>
-                  <span>{total + deliveryCost} ₽</span>
-                </div>
+          <section>
+            <p className="text-[11px] uppercase tracking-[0.3em] opacity-60">Итог</p>
+            <div className="mt-4 border border-black/10 bg-white p-5">
+              <div className="flex items-center justify-between text-[12px] uppercase tracking-[0.25em]">
+                <span>Товары</span>
+                <span>{total} ₽</span>
               </div>
-            </section>
-          ) : (
-            <section>
-              <p className="text-[11px] uppercase tracking-[0.3em] opacity-60">Оплата</p>
-              <div className="mt-4 border border-black/10 bg-white p-5">
-                <div className="text-[11px] uppercase tracking-[0.25em] text-red-500">Оплата временно отключена</div>
+              <div className="mt-2 flex items-center justify-between text-[12px] uppercase tracking-[0.25em] opacity-70">
+                <span>Доставка</span>
+                <span>{deliveryCost} ₽</span>
               </div>
-            </section>
-          )}
+              <div className="mt-4 flex items-center justify-between text-[12px] uppercase tracking-[0.25em]">
+                <span>Итого</span>
+                <span>{total + deliveryCost} ₽</span>
+              </div>
+            </div>
+            {!paymentYookassaEnabled && (
+              <div className="mt-3 text-[11px] uppercase tracking-[0.25em] text-red-500">
+                Оплата временно отключена
+              </div>
+            )}
+          </section>
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 z-20 border-t border-black/10 bg-[--secondary] px-5 py-4">
+      <div
+        className="fixed bottom-0 left-0 right-0 z-20 border-t border-black/10 bg-[--secondary] px-5 py-4"
+        style={{ paddingBottom: 'calc(16px + env(safe-area-inset-bottom))' }}
+      >
         <div className="mx-auto flex max-w-2xl flex-col gap-2">
           {error && <p className="text-[11px] uppercase tracking-[0.25em] text-red-500">{error}</p>}
           {paymentYookassaEnabled && (
@@ -442,7 +566,16 @@ const Checkout = () => {
               disabled={loading || !enabledProviders.length}
               className="btn-primary flex w-full items-center justify-between rounded-md px-5 py-4 text-[12px] uppercase tracking-[0.3em]"
             >
-              <span>{loading ? 'Оплата...' : 'Оплатить через ЮKassa'}</span>
+              <span className="flex items-center gap-2">
+                {paymentImageUrl && (
+                  <img
+                    src={paymentImageUrl.startsWith('http') ? paymentImageUrl : `${window.location.origin}${paymentImageUrl}`}
+                    alt="ЮKassa"
+                    className="h-5 w-auto object-contain"
+                  />
+                )}
+                {loading ? 'Оплата...' : paymentLabel}
+              </span>
               <span>{total + deliveryCost} ₽</span>
             </button>
           )}

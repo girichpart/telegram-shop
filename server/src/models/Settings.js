@@ -8,7 +8,11 @@ const settingsSchema = new mongoose.Schema({
   heroVideoUrl: { type: String, default: '' },
   deliveryCdekEnabled: { type: Boolean, default: true },
   deliveryYandexEnabled: { type: Boolean, default: false },
-  paymentYookassaEnabled: { type: Boolean, default: true }
+  paymentYookassaEnabled: { type: Boolean, default: true },
+  paymentYookassaLabel: { type: String, default: 'Оплатить через ЮKassa' },
+  paymentYookassaImageUrl: { type: String, default: '' },
+  telegramAdminChatId: { type: String, default: '' },
+  telegramAdminChatIds: { type: [String], default: [] }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Settings', settingsSchema);

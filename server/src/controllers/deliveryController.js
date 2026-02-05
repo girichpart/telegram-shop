@@ -339,6 +339,53 @@ exports.webhook = async (req, res) => {
   res.sendStatus(200);
 };
 
+exports.getCities = async (req, res) => {
+  const query = (req.query.q || req.query.city || '').toString().trim();
+  if (!query) {
+    return res.json([]);
+  }
+
+  if (!isCdekEnabled()) {
+    return res.json([
+      { code: 137, city: 'Санкт-Петербург', region: 'Санкт-Петербург', country: 'Россия' },
+      { code: 44, city: 'Москва', region: 'Москва', country: 'Россия' }
+    ].filter(item => item.city.toLowerCase().includes(query.toLowerCase())));
+  }
+
+  try {
+    if (!process.env.CDEK_CITIES_URL) {
+      throw new Error('CDEK_CITIES_URL not set');
+    }
+
+    const token = await getCdekToken();
+    const response = await axios.get(process.env.CDEK_CITIES_URL, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      params: {
+        city: query,
+        size: 7,
+        country_codes: 'RU'
+      }
+    });
+
+    const payload = response.data || [];
+    const list = Array.isArray(payload)
+      ? payload
+      : payload.cities || payload.items || payload.data || [];
+    const mapped = (Array.isArray(list) ? list : []).map(item => ({
+      code: item.code || item.city_code || item.location_code,
+      city: item.city || item.city_name || item.name || '',
+      region: item.region || item.region_name || '',
+      country: item.country || item.country_name || ''
+    }));
+
+    res.json(mapped.filter(item => item.city));
+  } catch (err) {
+    res.status(500).json({ error: err.response?.data || err.message });
+  }
+};
+
 exports.status = async (req, res) => {
   const enabled = isCdekEnabled();
   res.json({

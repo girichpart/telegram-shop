@@ -22,7 +22,11 @@ const emptySettings = {
   heroVideoUrl: '',
   deliveryCdekEnabled: true,
   deliveryYandexEnabled: false,
-  paymentYookassaEnabled: true
+  paymentYookassaEnabled: true,
+  paymentYookassaLabel: 'Оплатить через ЮKassa',
+  paymentYookassaImageUrl: '',
+  telegramAdminChatId: '',
+  telegramAdminChatIds: []
 };
 
 const orderStatuses = [
@@ -68,6 +72,7 @@ function App() {
   const [syncingContacts, setSyncingContacts] = useState(false);
   const [syncResult, setSyncResult] = useState('');
   const [statusInput, setStatusInput] = useState('');
+  const [adminChatInput, setAdminChatInput] = useState('');
 
   const fetchProducts = async () => {
     setLoading(true);
@@ -111,7 +116,13 @@ function App() {
     setSettingsError('');
     try {
       const res = await api.get('/api/settings');
-      setSettings({ ...emptySettings, ...(res.data || {}) });
+      const next = { ...emptySettings, ...(res.data || {}) };
+      const list = Array.isArray(next.telegramAdminChatIds) ? next.telegramAdminChatIds : [];
+      if (next.telegramAdminChatId && !list.includes(next.telegramAdminChatId)) {
+        list.push(next.telegramAdminChatId);
+      }
+      next.telegramAdminChatIds = list.filter(Boolean).map(String);
+      setSettings(next);
     } catch (err) {
       console.error(err);
       setSettingsError('Не удалось загрузить настройки');
@@ -190,6 +201,32 @@ function App() {
       setSettingsError('Не удалось загрузить видео');
     } finally {
       setVideoUploading(false);
+    }
+  };
+
+  const handlePaymentImageUpload = async (files) => {
+    if (!files || files.length === 0) return;
+    setSettingsError('');
+    try {
+      const formData = new FormData();
+      formData.append('file', files[0]);
+      const res = await api.post('/api/uploads', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      let nextUrl = res.data.url;
+      try {
+        const parsed = new URL(nextUrl, apiBase);
+        const base = new URL(apiBase);
+        if (parsed.host === base.host) {
+          nextUrl = parsed.pathname;
+        }
+      } catch (err) {
+        // keep original
+      }
+      setSettings(prev => ({ ...prev, paymentYookassaImageUrl: nextUrl }));
+    } catch (err) {
+      console.error(err);
+      setSettingsError('Не удалось загрузить изображение кнопки');
     }
   };
 
@@ -502,6 +539,23 @@ function App() {
       statusTags: Array.from(new Set([...(prev.statusTags || []), nextTag]))
     }));
     setStatusInput('');
+  };
+
+  const handleAddAdminChatId = (value) => {
+    const nextId = String(value || '').trim();
+    if (!nextId) return;
+    setSettings(prev => ({
+      ...prev,
+      telegramAdminChatIds: Array.from(new Set([...(prev.telegramAdminChatIds || []), nextId]))
+    }));
+    setAdminChatInput('');
+  };
+
+  const handleRemoveAdminChatId = (value) => {
+    setSettings(prev => ({
+      ...prev,
+      telegramAdminChatIds: (prev.telegramAdminChatIds || []).filter(item => item !== value)
+    }));
   };
 
   const handleRemoveStatusTag = (tag) => {
@@ -1114,9 +1168,57 @@ function App() {
                   <p className="admin-stat-value">{chatId || '—'}</p>
                 </div>
               </div>
+              <div className="admin-grid two">
+                <div className="admin-status-input">
+                  <input
+                    type="text"
+                    placeholder="Telegram ID или @username"
+                    value={adminChatInput}
+                    onChange={e => setAdminChatInput(e.target.value)}
+                    className="admin-input"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleAddAdminChatId(adminChatInput)}
+                    className="admin-btn ghost"
+                  >
+                    Добавить
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (chatId) {
+                      handleAddAdminChatId(chatId);
+                    }
+                  }}
+                  className="admin-btn ghost"
+                >
+                  Использовать найденный chat_id
+                </button>
+              </div>
+              <div className="admin-status-tags">
+                {(settings.telegramAdminChatIds || []).length === 0 && (
+                  <p className="admin-muted">Администраторы не добавлены.</p>
+                )}
+                {(settings.telegramAdminChatIds || []).map(id => (
+                  <button
+                    key={id}
+                    type="button"
+                    className="admin-tag"
+                    onClick={() => handleRemoveAdminChatId(id)}
+                  >
+                    {id}
+                    <span>×</span>
+                  </button>
+                ))}
+              </div>
               {botStatus?.hasUpdates === false && (
                 <p className="admin-muted">Пока нет сообщений. Нажмите «Открыть бота» и отправьте /start.</p>
               )}
+              <p className="admin-muted">
+                Можно добавить числовой Telegram ID или @username. Для @username пользователь должен отправить /start боту.
+              </p>
               {syncResult && <p className="admin-muted">{syncResult}</p>}
               {botError && <p className="admin-error">{botError}</p>}
             </section>
@@ -1155,6 +1257,37 @@ function App() {
                 <span>ЮKassa</span>
               </label>
             </div>
+            <div className="admin-grid">
+              <input
+                type="text"
+                placeholder="Текст на кнопке ЮKassa"
+                value={settings.paymentYookassaLabel || ''}
+                onChange={e => setSettings({ ...settings, paymentYookassaLabel: e.target.value })}
+                className="admin-input"
+              />
+              <div>
+                <p className="admin-muted">Картинка на кнопке</p>
+                <div className="admin-upload">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={e => handlePaymentImageUpload(Array.from(e.target.files || []))}
+                  />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Ссылка на картинку"
+                  value={settings.paymentYookassaImageUrl || ''}
+                  onChange={e => setSettings({ ...settings, paymentYookassaImageUrl: e.target.value })}
+                  className="admin-input"
+                />
+              </div>
+            </div>
+            {settings.paymentYookassaImageUrl && (
+              <div className="admin-thumb">
+                <img src={settings.paymentYookassaImageUrl.startsWith('http') ? settings.paymentYookassaImageUrl : `${apiBase}${settings.paymentYookassaImageUrl}`} alt="YooKassa" />
+              </div>
+            )}
             <p className="admin-muted">Если выключить метод, кнопки и блоки будут скрыты на витрине.</p>
           </section>
         )}

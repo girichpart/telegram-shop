@@ -11,7 +11,11 @@ const buildDefaults = () => ({
   heroVideoUrl: '/hero.mp4',
   deliveryCdekEnabled: true,
   deliveryYandexEnabled: false,
-  paymentYookassaEnabled: true
+  paymentYookassaEnabled: true,
+  paymentYookassaLabel: 'Оплатить через ЮKassa',
+  paymentYookassaImageUrl: '',
+  telegramAdminChatId: '',
+  telegramAdminChatIds: []
 });
 
 router.get('/', async (req, res) => {
@@ -29,8 +33,17 @@ router.get('/', async (req, res) => {
 
 router.put('/', adminAuth, async (req, res) => {
   try {
-    const allowedStringFields = ['heroTitle', 'heroSubtitle', 'heroDescription', 'heroVideoUrl'];
+    const allowedStringFields = [
+      'heroTitle',
+      'heroSubtitle',
+      'heroDescription',
+      'heroVideoUrl',
+      'paymentYookassaLabel',
+      'paymentYookassaImageUrl',
+      'telegramAdminChatId'
+    ];
     const allowedBooleanFields = ['deliveryCdekEnabled', 'deliveryYandexEnabled', 'paymentYookassaEnabled'];
+    const allowedArrayFields = ['telegramAdminChatIds'];
     const payload = {};
     for (const key of allowedStringFields) {
       if (typeof req.body[key] === 'string') {
@@ -41,6 +54,11 @@ router.put('/', adminAuth, async (req, res) => {
     for (const key of allowedBooleanFields) {
       if (typeof req.body[key] === 'boolean') {
         payload[key] = req.body[key];
+      }
+    }
+    for (const key of allowedArrayFields) {
+      if (Array.isArray(req.body[key])) {
+        payload[key] = req.body[key].map(item => String(item || '').trim()).filter(Boolean);
       }
     }
 
