@@ -1,5 +1,6 @@
 const YooKassa = require('yookassa');
 const Order = require('../models/Order');
+const { notifyOrder } = require('../utils/telegramNotify');
 
 const isYooKassaEnabled = () => process.env.YOOKASSA_ENABLED === 'true';
 
@@ -25,7 +26,7 @@ exports.createPayment = async (req, res) => {
     if (!order) return res.status(404).json({ error: 'Заказ не найден' });
 
     if (!isYooKassaEnabled()) {
-      await Order.findByIdAndUpdate(orderId, {
+      const updatedOrder = await Order.findByIdAndUpdate(orderId, {
         paymentStatus: 'paid',
         status: 'paid',
         payment: {
@@ -34,7 +35,9 @@ exports.createPayment = async (req, res) => {
           confirmationUrl: getReturnUrl(orderId),
           updatedAt: new Date()
         }
-      });
+      }, { new: true });
+
+      await notifyOrder(updatedOrder, 'paid');
 
       return res.json({
         status: 'paid',
@@ -108,7 +111,7 @@ exports.webhook = async (req, res) => {
     orderStatus = 'pending';
   }
 
-  await Order.findByIdAndUpdate(orderId, {
+  const updatedOrder = await Order.findByIdAndUpdate(orderId, {
     paymentStatus,
     status: orderStatus,
     payment: {
@@ -119,7 +122,19 @@ exports.webhook = async (req, res) => {
       lastEvent: eventType,
       updatedAt: new Date()
     }
-  });
+  }, { new: true });
+
+  if (eventType === 'payment.succeeded') {
+    await notifyOrder(updatedOrder, 'paid', {
+      paymentId: payment.id,
+      receiptUrl: payment.receipt?.url
+    });
+  }
+  if (eventType === 'payment.canceled') {
+    await notifyOrder(updatedOrder, 'canceled', {
+      paymentId: payment.id
+    });
+  }
 
   res.sendStatus(200);
 };

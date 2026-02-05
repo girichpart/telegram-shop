@@ -4,28 +4,28 @@ import SiteShell from '../components/SiteShell.jsx';
 
 const infoMap = {
   shipping: {
-    title: 'Shipping',
-    body: 'Orders are prepared within 1-2 business days. Courier and pickup options are calculated at checkout.'
+    title: 'Доставка',
+    body: 'Заказы готовим в течение 1–2 рабочих дней. Доставка СДЭК рассчитывается на этапе оформления.'
   },
   returns: {
-    title: 'Returns',
-    body: 'Returns are accepted within 14 days in original condition. To start a return, contact support.'
+    title: 'Возвраты',
+    body: 'Возврат возможен в течение 14 дней при сохранении состояния товара. Напишите в поддержку.'
   },
   faq: {
-    title: 'FAQ',
-    body: 'Questions about sizing, delivery, and payments? Reach out via support and we will help you quickly.'
+    title: 'Вопросы',
+    body: 'Поможем с размером, доставкой и оплатой. Напишите в поддержку — ответим быстро.'
   },
   about: {
-    title: 'About',
-    body: 'Elements is a compact technical shop built for Telegram. The interface is tuned for quick ordering.'
+    title: 'О нас',
+    body: 'grått — компактный магазин технических вещей для Telegram. Фокус на скорости и удобстве.'
   },
   privacy: {
-    title: 'Privacy',
-    body: 'We store only what is required to fulfill your order. Data is not shared with third parties.'
+    title: 'Политика',
+    body: 'Мы храним только необходимые данные для выполнения заказа. Ничего не передаем третьим лицам.'
   },
   terms: {
-    title: 'Terms',
-    body: 'All purchases are subject to availability. Prices include applicable taxes and fees.'
+    title: 'Условия',
+    body: 'Все покупки зависят от наличия товара. Цены указаны с учетом применимых сборов.'
   }
 };
 
@@ -33,8 +33,8 @@ const Info = () => {
   const navigate = useNavigate();
   const { slug } = useParams();
   const info = infoMap[slug] || {
-    title: 'Info',
-    body: 'Page not found.'
+    title: 'Информация',
+    body: 'Страница не найдена.'
   };
 
   return (

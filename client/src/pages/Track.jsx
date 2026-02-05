@@ -9,17 +9,18 @@ const Track = () => {
   const [orders, setOrders] = useState([]);
   const [error, setError] = useState('');
   const [hasSearched, setHasSearched] = useState(false);
+  const telegramUser = window.Telegram?.WebApp?.initDataUnsafe?.user || null;
 
-  const handleTrack = () => {
-    if (!phone) {
-      setError('Укажите номер телефона');
+  const handleTrack = (payload) => {
+    if (!payload.phone && !payload.telegramId) {
+      setError('Укажите номер телефона или откройте в Telegram');
       return;
     }
 
     setError('');
     setHasSearched(true);
 
-    api.get(`/api/track?phone=${encodeURIComponent(phone)}`)
+    api.get('/api/track', { params: payload })
       .then(res => setOrders(res.data))
       .catch(err => {
         console.error(err);
@@ -28,25 +29,34 @@ const Track = () => {
   };
 
   return (
-    <SiteShell headerVariant="back" headerTitle="Tracking" showFooter onBack={() => navigate(-1)}>
+    <SiteShell headerVariant="back" headerTitle="Отслеживание" showFooter onBack={() => navigate(-1)}>
       <div className="px-5 pb-16">
         <div className="mt-8 border border-black/10 bg-white p-5">
-          <p className="text-[11px] uppercase tracking-[0.3em] opacity-60">Track by phone</p>
+          <p className="text-[11px] uppercase tracking-[0.3em] opacity-60">Отследить по телефону</p>
           <div className="mt-4 grid gap-3">
             <input
               type="tel"
-              placeholder="Phone number"
+              placeholder="Номер телефона"
               value={phone}
               onChange={e => setPhone(e.target.value)}
               className="w-full border border-black/10 bg-white px-4 py-3 text-[12px] uppercase tracking-[0.2em]"
             />
             <button
               type="button"
-              onClick={handleTrack}
-              className="border border-black/10 bg-black px-4 py-3 text-[12px] uppercase tracking-[0.25em] text-white"
+              onClick={() => handleTrack({ phone })}
+              className="btn-primary px-4 py-3 text-[12px] uppercase tracking-[0.25em]"
             >
-              Check status
+              Проверить
             </button>
+            {telegramUser && (
+              <button
+                type="button"
+                onClick={() => handleTrack({ telegramId: telegramUser.id })}
+                className="btn-outline px-4 py-3 text-[12px] uppercase tracking-[0.25em]"
+              >
+                Мои заказы в Telegram
+              </button>
+            )}
             {error && <p className="text-[11px] uppercase tracking-[0.25em] text-red-500">{error}</p>}
           </div>
         </div>
@@ -54,13 +64,13 @@ const Track = () => {
         <div className="mt-8 grid gap-4">
           {orders.map(order => (
             <div key={order.id} className="border border-black/10 bg-white p-5">
-              <p className="text-[12px] uppercase tracking-[0.25em]">Order #{order.id}</p>
+              <p className="text-[12px] uppercase tracking-[0.25em]">Заказ #{order.id}</p>
               <div className="mt-3 grid gap-2 text-[11px] uppercase tracking-[0.25em] opacity-70">
-                <p>Status: {order.status}</p>
-                <p>Payment: {order.paymentStatus}</p>
-                <p>Delivery: {order.deliveryStatus}</p>
-                {order.trackingNumber && <p>Tracking: {order.trackingNumber}</p>}
-                <p>Total: {order.total} ₽</p>
+                <p>Статус: {order.status}</p>
+                <p>Оплата: {order.paymentStatus}</p>
+                <p>Доставка: {order.deliveryStatus}</p>
+                {order.trackingNumber && <p>Трек: {order.trackingNumber}</p>}
+                <p>Сумма: {order.total} ₽</p>
               </div>
             </div>
           ))}

@@ -1,0 +1,188 @@
+import React, { useEffect, useState } from 'react';
+import api from '../api';
+import SiteShell from '../components/SiteShell.jsx';
+import { extractPhoneNumber, isContactSuccess } from '../utils/telegram.js';
+
+const Account = () => {
+  const telegramUser = window.Telegram?.WebApp?.initDataUnsafe?.user || null;
+  const [phone, setPhone] = useState(() => localStorage.getItem('tg_phone') || '');
+  const [phoneVerified, setPhoneVerified] = useState(() => localStorage.getItem('tg_phone_verified') === 'true');
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const loadOrders = async (payload) => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await api.get('/api/track', { params: payload });
+      setOrders(Array.isArray(res.data) ? res.data : []);
+    } catch (err) {
+      console.error(err);
+      setError('Не удалось загрузить заказы');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRequestPhone = async () => {
+    const tg = window.Telegram?.WebApp;
+    if (!tg?.requestContact) {
+      setError('Telegram не поддерживает запрос контакта. Укажите номер вручную.');
+      return;
+    }
+
+    try {
+      const result = await tg.requestContact();
+      if (isContactSuccess(result)) {
+        const phoneNumber = extractPhoneNumber(result);
+        if (phoneNumber) {
+          localStorage.setItem('tg_phone', phoneNumber);
+          localStorage.setItem('tg_phone_verified', 'true');
+          setPhone(phoneNumber);
+          setPhoneVerified(true);
+          if (telegramUser?.id) {
+            loadOrders({ telegramId: telegramUser.id });
+          }
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      setError('Не удалось получить номер телефона.');
+    }
+  };
+
+  const botUsername = import.meta.env.VITE_TELEGRAM_BOT_USERNAME;
+  const handleOpenBot = () => {
+    if (!botUsername) {
+      setError('Укажите VITE_TELEGRAM_BOT_USERNAME в .env');
+      return;
+    }
+    const url = `https://t.me/${botUsername}`;
+    const tg = window.Telegram?.WebApp;
+    if (tg?.openTelegramLink) {
+      tg.openTelegramLink(url);
+    } else {
+      window.open(url, '_blank');
+    }
+  };
+
+  useEffect(() => {
+    if (telegramUser?.id) {
+      loadOrders({ telegramId: telegramUser.id });
+    }
+  }, []);
+
+  useEffect(() => {
+    const tg = window.Telegram?.WebApp;
+    if (!tg?.onEvent) return undefined;
+    const handler = (payload) => {
+      if (!isContactSuccess(payload)) {
+        return;
+      }
+      const phoneNumber = extractPhoneNumber(payload);
+      if (phoneNumber) {
+        localStorage.setItem('tg_phone', phoneNumber);
+        localStorage.setItem('tg_phone_verified', 'true');
+        setPhone(phoneNumber);
+        setPhoneVerified(true);
+        if (telegramUser?.id) {
+          loadOrders({ telegramId: telegramUser.id });
+        }
+      }
+    };
+    tg.onEvent('contactRequested', handler);
+    tg.onEvent?.('phoneNumberRequested', handler);
+    tg.onEvent?.('web_app_request_contact', handler);
+    return () => {
+      tg.offEvent?.('contactRequested', handler);
+      tg.offEvent?.('phoneNumberRequested', handler);
+      tg.offEvent?.('web_app_request_contact', handler);
+    };
+  }, []);
+
+  return (
+    <SiteShell headerVariant="site" headerTitle="grått" showNotice>
+      <div className="px-5 py-10">
+        <div className="grid gap-8">
+          <section>
+            <p className="text-[11px] uppercase tracking-[0.3em] opacity-60">Личный кабинет</p>
+            <div className="mt-4 rounded-sm border border-black/10 bg-white p-4 text-[12px] uppercase tracking-[0.25em]">
+              {telegramUser ? (
+                <div className="grid gap-2">
+                  <div>Telegram: @{telegramUser.username || 'без username'}</div>
+                  <div>{telegramUser.first_name} {telegramUser.last_name || ''}</div>
+                  <div>Телефон: {phone || 'не подтвержден'} {phoneVerified ? '(подтвержден)' : ''}</div>
+                </div>
+              ) : (
+                <div>Откройте магазин в Telegram для входа.</div>
+              )}
+            </div>
+          </section>
+
+          {telegramUser && (
+            <section>
+            <p className="text-[11px] uppercase tracking-[0.3em] opacity-60">Подтверждение номера</p>
+            <div className="mt-4 grid gap-3">
+              <input
+                className="w-full border border-black/10 bg-white px-4 py-3 text-[12px] uppercase tracking-[0.2em] opacity-70"
+                placeholder="Телефон"
+                type="tel"
+                value={phone}
+                readOnly
+              />
+              <button
+                type="button"
+                onClick={handleRequestPhone}
+                className="border border-black/10 bg-white px-4 py-3 text-[12px] uppercase tracking-[0.25em]"
+              >
+                Запросить в Telegram
+              </button>
+              <button
+                type="button"
+                onClick={handleOpenBot}
+                className="btn-outline px-4 py-3 text-[12px] uppercase tracking-[0.25em]"
+              >
+                Открыть бота
+              </button>
+              <p className="text-[10px] uppercase tracking-[0.25em] opacity-60">
+                Нажмите /start в боте, чтобы получать уведомления.
+              </p>
+            </div>
+          </section>
+          )}
+
+          {telegramUser && (
+            <section>
+            <p className="text-[11px] uppercase tracking-[0.3em] opacity-60">История</p>
+            {loading && (
+              <div className="mt-4 text-[11px] uppercase tracking-[0.25em] opacity-60">Загрузка...</div>
+            )}
+            {error && (
+              <div className="mt-4 text-[11px] uppercase tracking-[0.25em] text-red-500">{error}</div>
+            )}
+            {!loading && orders.length === 0 && (
+              <div className="mt-4 text-[11px] uppercase tracking-[0.25em] opacity-60">Заказов нет.</div>
+            )}
+            <div className="mt-4 grid gap-3">
+              {orders.map(order => (
+                <div key={order.id} className="rounded-sm border border-black/10 bg-white p-4 text-[11px] uppercase tracking-[0.25em]">
+                  <div className="flex items-center justify-between">
+                    <span>Заказ #{order.id.slice(-6)}</span>
+                    <span>{order.total} ₽</span>
+                  </div>
+                  <div className="mt-2 opacity-60">Статус: {order.status}</div>
+                  <div className="mt-2 opacity-60">Оплата: {order.paymentStatus}</div>
+                  <div className="mt-2 opacity-60">Доставка: {order.deliveryStatus}</div>
+                </div>
+              ))}
+            </div>
+          </section>
+          )}
+        </div>
+      </div>
+    </SiteShell>
+  );
+};
+
+export default Account;

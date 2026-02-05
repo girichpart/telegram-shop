@@ -43,7 +43,11 @@ router.get('/', async (req, res) => {
 // Создать (для админки)
 router.post('/', adminAuth, async (req, res) => {
   try {
-    const product = new Product(req.body);
+    const payload = { ...req.body };
+    if (Array.isArray(payload.sizes) && payload.sizes.length > 0) {
+      payload.stock = payload.sizes.reduce((sum, s) => sum + (Number(s.stock) || 0), 0);
+    }
+    const product = new Product(payload);
     await product.save();
     res.json(product);
   } catch (err) {
@@ -86,9 +90,14 @@ router.get('/:id', async (req, res) => {
 // Обновить (для админки)
 router.put('/:id', adminAuth, async (req, res) => {
   try {
+    const payload = { ...req.body };
+    if (Array.isArray(payload.sizes) && payload.sizes.length > 0) {
+      payload.stock = payload.sizes.reduce((sum, s) => sum + (Number(s.stock) || 0), 0);
+    }
+
     const product = await Product.findByIdAndUpdate(
       req.params.id,
-      req.body,
+      payload,
       { new: true, runValidators: true }
     );
     if (!product) return res.status(404).json({ error: 'Товар не найден' });

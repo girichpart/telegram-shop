@@ -2,13 +2,20 @@ const mongoose = require('mongoose');
 
 const orderSchema = new mongoose.Schema({
   userId: String,
+  telegram: {
+    id: String,
+    username: String,
+    firstName: String,
+    lastName: String
+  },
   phone: { type: String, required: true },
   email: { type: String, required: true },
   products: [{
     productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
     name: String,
     price: Number,
-    quantity: { type: Number, default: 1 }
+    quantity: { type: Number, default: 1 },
+    size: String
   }],
   totalAmount: { type: Number, required: true },
   paymentStatus: { type: String, default: 'pending' },

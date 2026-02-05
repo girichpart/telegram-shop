@@ -15,20 +15,42 @@ const storage = multer.diskStorage({
   }
 });
 
-const fileFilter = (req, file, cb) => {
+const imageFilter = (req, file, cb) => {
   if (!file.mimetype.startsWith('image/')) {
     return cb(new Error('Only images are allowed'));
   }
   cb(null, true);
 };
 
+const videoFilter = (req, file, cb) => {
+  if (!file.mimetype.startsWith('video/')) {
+    return cb(new Error('Only videos are allowed'));
+  }
+  cb(null, true);
+};
+
 const upload = multer({
   storage,
-  fileFilter,
+  fileFilter: imageFilter,
   limits: { fileSize: 5 * 1024 * 1024 }
 });
 
+const uploadVideo = multer({
+  storage,
+  fileFilter: videoFilter,
+  limits: { fileSize: 80 * 1024 * 1024 }
+});
+
 router.post('/', adminAuth, upload.single('file'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'Файл не загружен' });
+  }
+
+  const baseUrl = process.env.API_PUBLIC_URL || `${req.protocol}://${req.get('host')}`;
+  res.json({ url: `${baseUrl}/uploads/${req.file.filename}` });
+});
+
+router.post('/video', adminAuth, uploadVideo.single('file'), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'Файл не загружен' });
   }

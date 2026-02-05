@@ -20,6 +20,8 @@ app.use('/api', express.urlencoded({ extended: true }));
 const uploadsDir = path.join(__dirname, 'uploads');
 fs.mkdirSync(uploadsDir, { recursive: true });
 app.use('/uploads', express.static(uploadsDir));
+const clientPublicPath = path.join(__dirname, '..', 'client', 'public');
+app.use(express.static(clientPublicPath));
 
 app.use('/api/admin', require('./src/routes/admin'));
 app.use('/api/uploads', require('./src/routes/uploads'));
@@ -28,6 +30,7 @@ app.use('/api/orders', require('./src/routes/orders'));
 app.use('/api/payments', require('./src/routes/payments'));
 app.use('/api/delivery', require('./src/routes/delivery'));
 app.use('/api/track', require('./src/routes/track'));
+app.use('/api/settings', require('./src/routes/settings'));
 
 const devProxyEnabled = process.env.DEV_PROXY === 'true';
 const clientDevUrl = process.env.CLIENT_DEV_URL || 'http://localhost:5173';

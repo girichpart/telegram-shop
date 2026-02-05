@@ -3,19 +3,21 @@ const router = express.Router();
 const Order = require('../models/Order');
 
 router.get('/', async (req, res) => {
-  const { phone } = req.query;
-  if (!phone) {
-    return res.status(400).json({ error: 'Необходим номер телефона' });
+  const { telegramId } = req.query;
+  if (!telegramId) {
+    return res.status(400).json({ error: 'Необходим Telegram ID' });
   }
 
   try {
-    const orders = await Order.find({ phone }).select('_id status totalAmount createdAt updatedAt delivery paymentStatus payment');
+    const orders = await Order.find({ 'telegram.id': String(telegramId) }).select('_id status totalAmount createdAt updatedAt delivery paymentStatus payment telegram phone');
     res.json(orders.map(order => ({
       id: order._id.toString(),
       status: order.status,
       total: order.totalAmount,
       createdAt: order.createdAt?.toISOString?.() || null,
       updatedAt: order.updatedAt?.toISOString?.() || null,
+      phone: order.phone,
+      telegram: order.telegram || null,
       delivery: order.delivery,
       deliveryStatus: order.delivery?.status || 'created',
       trackingNumber: order.delivery?.trackingNumber || null,

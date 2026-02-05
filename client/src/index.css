@@ -1,8 +1,19 @@
+@import "tailwindcss";
+@import "./styles/pns-palette.css";
+
 :root {
-  --primary: #0f0f0f;
-  --secondary: #f6f6f2;
+  --primary: #000000;
+  --secondary: #ffffff;
   --primary-foreground: #ffffff;
-  --secondary-foreground: #1a1a1a;
+  --secondary-foreground: #141414;
+  --color-border: rgba(0, 0, 0, 0.12);
+  --color-form-border: #d1d5db;
+  --btn-primary-bg: #000000;
+  --btn-primary-text: #ffffff;
+  --btn-primary-hover: #141414;
+  --btn-primary-text-hover: #ffffff;
+  --btn-secondary-bg: #ffffff;
+  --btn-secondary-text: #141414;
   --header-height: 64px;
   --notification-height: 0px;
 }
@@ -10,6 +21,55 @@
 body {
   background: var(--secondary);
   color: var(--primary);
+}
+
+.btn-primary {
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+  border: 1px solid var(--btn-primary-bg);
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.btn-primary:hover {
+  background: var(--btn-primary-hover);
+  color: var(--btn-primary-text-hover);
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--primary);
+  border: 1px solid var(--color-border);
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.btn-outline:hover {
+  background: var(--btn-secondary-bg);
+  color: var(--btn-secondary-text);
+  border-color: var(--color-border);
+}
+
+.heading-md {
+  font-size: 28px;
+  line-height: 1.1;
+  letter-spacing: 0.04em;
+}
+
+.heading-4 {
+  font-size: 22px;
+  line-height: 1.2;
+  letter-spacing: 0.04em;
+}
+
+.heading-6 {
+  font-size: 12px;
+  line-height: 1.2;
+  letter-spacing: 0.2em;
+}
+
+.t-small {
+  font-size: 12px;
+  line-height: 1.4;
+  letter-spacing: 0.04em;
 }
 
 .pns-shell {
@@ -28,6 +88,20 @@ body {
 
 .pns-fade-in {
   animation: pnsFadeIn 0.6s ease both;
+}
+
+.pns-page {
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.pns-page-enter {
+  opacity: 0;
+  transform: translateY(16px);
+}
+
+.pns-page-entered {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 @keyframes pnsFadeUp {

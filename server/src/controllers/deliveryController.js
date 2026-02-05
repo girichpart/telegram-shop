@@ -1,5 +1,6 @@
 const axios = require('axios');
 const Order = require('../models/Order');
+const { notifyOrder } = require('../utils/telegramNotify');
 
 const isCdekEnabled = () => process.env.CDEK_ENABLED === 'true';
 
@@ -69,7 +70,18 @@ exports.calculateDelivery = async (req, res) => {
       }
     );
 
-    res.json(response.data);
+    const payload = response.data || {};
+    const directCost = payload.cost || payload.price || payload.total_sum || payload.delivery_sum;
+    const etaDays = payload.period_min || payload.delivery_period_min || payload.delivery_term_min || null;
+    const etaDaysMax = payload.period_max || payload.delivery_period_max || payload.delivery_term_max || null;
+    const resolvedEta = etaDaysMax || etaDays;
+
+    res.json({
+      provider: 'CDEK',
+      raw: payload,
+      cost: typeof directCost === 'number' ? directCost : 0,
+      etaDays: resolvedEta
+    });
   } catch (err) {
     res.status(500).json({ error: err.response?.data || err.message });
   }
@@ -147,10 +159,25 @@ exports.webhook = async (req, res) => {
       order.delivery.updatedAt = new Date();
       order.delivery.history = history;
       await order.save();
+      await notifyOrder(order, 'delivery', {
+        deliveryStatus: status,
+        trackingNumber: order.delivery.trackingNumber
+      });
     }
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
 
   res.sendStatus(200);
+};
+
+exports.status = async (req, res) => {
+  const enabled = isCdekEnabled();
+  res.json({
+    enabled,
+    hasAuth: Boolean(process.env.CDEK_AUTH_URL && (process.env.CDEK_CLIENT_ID || process.env.CDEK_ACCOUNT) && (process.env.CDEK_CLIENT_SECRET || process.env.CDEK_PASSWORD)),
+    hasCalc: Boolean(process.env.CDEK_CALC_URL),
+    hasPvz: Boolean(process.env.CDEK_PVZ_URL),
+    fromCityCode: process.env.CDEK_FROM_CITY_CODE || null
+  });
 };
