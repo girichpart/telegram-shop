@@ -105,12 +105,12 @@ if (devProxyEnabled) {
 } else {
   if (fs.existsSync(adminIndex)) {
     app.use('/admin', express.static(adminDistPath));
-    app.get('/admin/*', (req, res) => res.sendFile(adminIndex));
+    app.get('/admin/:path(*)', (req, res) => res.sendFile(adminIndex));
   }
 
   if (fs.existsSync(clientIndex)) {
     app.use(express.static(clientDistPath));
-    app.get('*', (req, res) => res.sendFile(clientIndex));
+    app.get('/:path(*)', (req, res) => res.sendFile(clientIndex));
   }
 }
 
