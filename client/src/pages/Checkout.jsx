@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import { useCart } from '../context/CartContext.jsx';
@@ -10,19 +10,96 @@ const Checkout = () => {
   const { items, total, clear } = useCart();
 
   const telegramUser = window.Telegram?.WebApp?.initDataUnsafe?.user || null;
+  const draft = useMemo(() => {
+    if (typeof window === 'undefined') return {};
+    try {
+      return JSON.parse(localStorage.getItem('checkout_draft_v1') || '{}');
+    } catch {
+      return {};
+    }
+  }, []);
 
-  const [phone, setPhone] = useState(() => localStorage.getItem('tg_phone') || '');
+  const [phone, setPhone] = useState(() => localStorage.getItem('tg_phone') || draft.phone || '');
   const [phoneVerified, setPhoneVerified] = useState(() => localStorage.getItem('tg_phone_verified') === 'true');
-  const [email, setEmail] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [city, setCity] = useState('');
+  const [email, setEmail] = useState(draft.email || '');
+  const [firstName, setFirstName] = useState(draft.firstName || '');
+  const [lastName, setLastName] = useState(draft.lastName || '');
+  const [city, setCity] = useState(draft.city || '');
+  const [deliveryProvider, setDeliveryProvider] = useState(draft.deliveryProvider || 'cdek');
   const [pvzList, setPvzList] = useState([]);
-  const [selectedPvz, setSelectedPvz] = useState('');
+  const [selectedPvz, setSelectedPvz] = useState(draft.selectedPvz || '');
   const [deliveryCost, setDeliveryCost] = useState(0);
   const [etaDays, setEtaDays] = useState(null);
+  const [settings, setSettings] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const deliveryOptions = useMemo(() => ([
+    { id: 'cdek', label: 'СДЭК ПВЗ', enabled: settings?.deliveryCdekEnabled !== false },
+    { id: 'yandex', label: 'Яндекс доставка', enabled: settings?.deliveryYandexEnabled === true }
+  ]), [settings]);
+  const enabledProviders = deliveryOptions.filter(option => option.enabled).map(option => option.id);
+  const paymentYookassaEnabled = settings?.paymentYookassaEnabled !== false;
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const payload = {
+        phone,
+        email,
+        firstName,
+        lastName,
+        city,
+        selectedPvz,
+        deliveryProvider
+      };
+      localStorage.setItem('checkout_draft_v1', JSON.stringify(payload));
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [phone, email, firstName, lastName, city, selectedPvz, deliveryProvider]);
+
+  useEffect(() => {
+    setPvzList([]);
+    setSelectedPvz('');
+    setDeliveryCost(0);
+    setEtaDays(null);
+  }, [deliveryProvider]);
+
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const res = await api.get('/api/settings', { params: { ts: Date.now() } });
+        setSettings(res.data || null);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    loadSettings();
+  }, []);
+
+  useEffect(() => {
+    if (!enabledProviders.length) return;
+    if (!enabledProviders.includes(deliveryProvider)) {
+      setDeliveryProvider(enabledProviders[0]);
+    }
+  }, [enabledProviders, deliveryProvider]);
+
+  const saveCustomer = async (phoneNumber) => {
+    if (!telegramUser?.id || !phoneNumber) return;
+    try {
+      await api.post('/api/customers', {
+        phone: phoneNumber,
+        telegram: {
+          id: telegramUser.id,
+          username: telegramUser.username,
+          firstName: telegramUser.first_name,
+          lastName: telegramUser.last_name
+        }
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
@@ -38,6 +115,7 @@ const Checkout = () => {
         localStorage.setItem('tg_phone_verified', 'true');
         setPhone(phoneNumber);
         setPhoneVerified(true);
+        saveCustomer(phoneNumber);
       }
     };
 
@@ -67,6 +145,7 @@ const Checkout = () => {
           localStorage.setItem('tg_phone_verified', 'true');
           setPhone(phoneNumber);
           setPhoneVerified(true);
+          saveCustomer(phoneNumber);
         }
       }
     } catch (err) {
@@ -103,12 +182,13 @@ const Checkout = () => {
       try {
         const res = await api.post('/api/delivery/calculate', {
           city,
-          type: 'pvz'
+          type: 'pvz',
+          provider: deliveryProvider
         });
         setDeliveryCost(res.data.cost || 0);
         setEtaDays(res.data.etaDays || null);
 
-        const pvz = await api.get('/api/delivery/pvz', { params: { city } });
+        const pvz = await api.get('/api/delivery/pvz', { params: { city, provider: deliveryProvider } });
         setPvzList(Array.isArray(pvz.data) ? pvz.data : []);
       } catch (err) {
         console.error(err);
@@ -117,13 +197,9 @@ const Checkout = () => {
     }, 600);
 
     return () => clearTimeout(timer);
-  }, [city]);
+  }, [city, deliveryProvider]);
 
   const handleSubmit = async () => {
-    if (!telegramUser) {
-      setError('Откройте магазин в Telegram');
-      return;
-    }
     if (!phone) {
       setError('Введите номер телефона или подтвердите его в Telegram');
       return;
@@ -132,8 +208,16 @@ const Checkout = () => {
       setError('Заполните email и город');
       return;
     }
+    if (!enabledProviders.length) {
+      setError('Доставка временно недоступна');
+      return;
+    }
     if (!selectedPvz) {
-      setError('Выберите ПВЗ СДЭК');
+      setError(deliveryProvider === 'yandex' ? 'Выберите ПВЗ Яндекс' : 'Выберите ПВЗ СДЭК');
+      return;
+    }
+    if (!paymentYookassaEnabled) {
+      setError('Оплата временно недоступна');
       return;
     }
     if (items.length === 0) {
@@ -156,6 +240,7 @@ const Checkout = () => {
         } : null,
         products: items.map(i => ({ productId: i.productId, quantity: i.quantity, size: i.size })),
         delivery: {
+          provider: deliveryProvider,
           type: 'pvz',
           city,
           pvz: selectedPvz,
@@ -186,20 +271,15 @@ const Checkout = () => {
     }
   };
 
-  if (!telegramUser) {
-    return (
-      <SiteShell headerVariant="back" headerTitle="Оплата" showFooter={false} onBack={() => navigate(-1)}>
-        <div className="px-5 py-16 text-[11px] uppercase tracking-[0.3em] opacity-60">
-          Откройте магазин в Telegram, чтобы оформить заказ.
-        </div>
-      </SiteShell>
-    );
-  }
-
   return (
-    <SiteShell headerVariant="back" headerTitle="Оплата" showFooter={false} onBack={() => navigate(-1)}>
+    <SiteShell headerVariant="site" headerTitle="grått" showFooter={false} showNotice>
       <div className="px-5 pb-32">
         <div className="mt-8 grid gap-10">
+          {!telegramUser && (
+            <div className="border border-black/10 bg-white px-4 py-3 text-[11px] uppercase tracking-[0.25em] opacity-70">
+              Локальный режим: Telegram не подключен, часть функций недоступна.
+            </div>
+          )}
           <section>
             <p className="text-[11px] uppercase tracking-[0.3em] opacity-60">Ваш заказ</p>
             <div className="mt-4 grid gap-3">
@@ -219,9 +299,28 @@ const Checkout = () => {
           </section>
 
           <section>
-            <p className="text-[11px] uppercase tracking-[0.3em] opacity-60">Доставка (СДЭК ПВЗ)</p>
+            <p className="text-[11px] uppercase tracking-[0.3em] opacity-60">Доставка</p>
             <div className="mt-4 grid gap-3">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-2">
+                <p className="text-[10px] uppercase tracking-[0.25em] opacity-60">Способ доставки</p>
+                {enabledProviders.length > 0 ? (
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {deliveryOptions.filter(option => option.enabled).map(option => (
+                      <button
+                        key={option.id}
+                        type="button"
+                        onClick={() => setDeliveryProvider(option.id)}
+                        className={`px-4 py-3 text-[12px] uppercase tracking-[0.2em] ${deliveryProvider === option.id ? 'btn-primary' : 'btn-outline'}`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-[11px] uppercase tracking-[0.25em] text-red-500">Способы доставки отключены</p>
+                )}
+              </div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <input
                   className="w-full border border-black/10 bg-white px-4 py-3 text-[12px] uppercase tracking-[0.2em]"
                   placeholder="Имя"
@@ -287,7 +386,9 @@ const Checkout = () => {
               />
               {pvzList.length > 0 && (
                 <div className="grid gap-2">
-                  <p className="text-[10px] uppercase tracking-[0.25em] opacity-60">ПВЗ СДЭК</p>
+                  <p className="text-[10px] uppercase tracking-[0.25em] opacity-60">
+                    {deliveryProvider === 'yandex' ? 'ПВЗ Яндекс' : 'ПВЗ СДЭК'}
+                  </p>
                   <select
                     className="w-full border border-black/10 bg-white px-4 py-3 text-[12px] uppercase tracking-[0.2em]"
                     value={selectedPvz}
@@ -295,7 +396,7 @@ const Checkout = () => {
                   >
                     <option value="">Выберите ПВЗ</option>
                     {pvzList.map(item => (
-                      <option key={item.id || item.code || item.address} value={item.address || item.location?.address || item.code || item.id}>
+                      <option key={item.id || item.code || item.address || item.location?.address} value={item.address || item.location?.address || item.code || item.id}>
                         {item.address || item.location?.address || item.code || item.id}
                       </option>
                     ))}
@@ -310,30 +411,41 @@ const Checkout = () => {
             </div>
           </section>
 
-          <section>
-            <p className="text-[11px] uppercase tracking-[0.3em] opacity-60">Оплата</p>
-            <div className="mt-4 border border-black/10 bg-white p-5">
-              <div className="flex items-center justify-between text-[12px] uppercase tracking-[0.25em]">
-                <span>ЮKassa</span>
-                <span>{total + deliveryCost} ₽</span>
+          {paymentYookassaEnabled ? (
+            <section>
+              <p className="text-[11px] uppercase tracking-[0.3em] opacity-60">Оплата</p>
+              <div className="mt-4 border border-black/10 bg-white p-5">
+                <div className="flex items-center justify-between text-[12px] uppercase tracking-[0.25em]">
+                  <span>ЮKassa</span>
+                  <span>{total + deliveryCost} ₽</span>
+                </div>
               </div>
-            </div>
-          </section>
+            </section>
+          ) : (
+            <section>
+              <p className="text-[11px] uppercase tracking-[0.3em] opacity-60">Оплата</p>
+              <div className="mt-4 border border-black/10 bg-white p-5">
+                <div className="text-[11px] uppercase tracking-[0.25em] text-red-500">Оплата временно отключена</div>
+              </div>
+            </section>
+          )}
         </div>
       </div>
 
       <div className="fixed bottom-0 left-0 right-0 z-20 border-t border-black/10 bg-[--secondary] px-5 py-4">
         <div className="mx-auto flex max-w-2xl flex-col gap-2">
           {error && <p className="text-[11px] uppercase tracking-[0.25em] text-red-500">{error}</p>}
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={loading}
-            className="btn-primary flex w-full items-center justify-between rounded-md px-5 py-4 text-[12px] uppercase tracking-[0.3em]"
-          >
-            <span>{loading ? 'Оплата...' : 'Оплатить ЮKassa'}</span>
-            <span>{total + deliveryCost} ₽</span>
-          </button>
+          {paymentYookassaEnabled && (
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={loading || !enabledProviders.length}
+              className="btn-primary flex w-full items-center justify-between rounded-md px-5 py-4 text-[12px] uppercase tracking-[0.3em]"
+            >
+              <span>{loading ? 'Оплата...' : 'Оплатить через ЮKassa'}</span>
+              <span>{total + deliveryCost} ₽</span>
+            </button>
+          )}
         </div>
       </div>
     </SiteShell>

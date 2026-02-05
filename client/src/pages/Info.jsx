@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import SiteShell from '../components/SiteShell.jsx';
 
 const infoMap = {
@@ -30,7 +30,6 @@ const infoMap = {
 };
 
 const Info = () => {
-  const navigate = useNavigate();
   const { slug } = useParams();
   const info = infoMap[slug] || {
     title: 'Информация',
@@ -38,7 +37,7 @@ const Info = () => {
   };
 
   return (
-    <SiteShell headerVariant="back" headerTitle={info.title} showFooter onBack={() => navigate(-1)}>
+    <SiteShell headerVariant="site" headerTitle="grått" showFooter showNotice>
       <div className="px-5 pb-16">
         <div className="mt-8 border border-black/10 bg-white p-6">
           <p className="text-[11px] uppercase tracking-[0.3em] opacity-60">{info.title}</p>

@@ -3,9 +3,74 @@ const Order = require('../models/Order');
 const { notifyOrder } = require('../utils/telegramNotify');
 
 const isCdekEnabled = () => process.env.CDEK_ENABLED === 'true';
+const isYandexEnabled = () => process.env.YANDEX_ENABLED === 'true';
 
 let cachedToken = null;
 let cachedTokenExpiresAt = 0;
+const cdekCityCache = new Map();
+
+const normalizeCityName = (value) => {
+  if (!value) return '';
+  return String(value).trim();
+};
+
+const resolveCdekCityCode = async (city) => {
+  const normalized = normalizeCityName(city);
+  if (!normalized || !process.env.CDEK_CITIES_URL) return null;
+
+  const aliasMap = new Map([
+    ['спб', 'Санкт-Петербург'],
+    ['санкт-петербург', 'Санкт-Петербург'],
+    ['питер', 'Санкт-Петербург'],
+    ['мск', 'Москва'],
+    ['москва', 'Москва']
+  ]);
+
+  const key = normalized.toLowerCase();
+  const lookupValue = aliasMap.get(key) || normalized;
+  const cacheKey = lookupValue.toLowerCase();
+  if (cdekCityCache.has(cacheKey)) return cdekCityCache.get(cacheKey);
+
+  try {
+    const token = await getCdekToken();
+    const response = await axios.get(process.env.CDEK_CITIES_URL, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      params: {
+        city: lookupValue,
+        size: 1,
+        country_codes: 'RU'
+      }
+    });
+
+    const payload = response.data || [];
+    const list = Array.isArray(payload)
+      ? payload
+      : payload.cities || payload.items || payload.data || [];
+    const item = Array.isArray(list) ? list[0] : null;
+    const code = item?.code || item?.city_code || item?.location_code || null;
+    cdekCityCache.set(cacheKey, code);
+    return code;
+  } catch (err) {
+    return null;
+  }
+};
+
+const buildYandexHeaders = () => {
+  const headers = { 'Content-Type': 'application/json' };
+  if (process.env.YANDEX_OAUTH_TOKEN) {
+    headers.Authorization = `OAuth ${process.env.YANDEX_OAUTH_TOKEN}`;
+  } else if (process.env.YANDEX_API_KEY) {
+    headers.Authorization = `Api-Key ${process.env.YANDEX_API_KEY}`;
+  } else if (process.env.YANDEX_TOKEN) {
+    headers.Authorization = `Bearer ${process.env.YANDEX_TOKEN}`;
+  }
+  if (process.env.YANDEX_CLIENT_ID) {
+    headers['X-Client-ID'] = process.env.YANDEX_CLIENT_ID;
+  }
+  return headers;
+};
 
 const getCdekToken = async () => {
   const clientId = process.env.CDEK_CLIENT_ID || process.env.CDEK_ACCOUNT;
@@ -36,7 +101,48 @@ const getCdekToken = async () => {
 };
 
 exports.calculateDelivery = async (req, res) => {
-  const { city, type } = req.body;
+  const { city, type, provider } = req.body || {};
+  const normalizedProvider = String(provider || 'cdek').toLowerCase();
+
+  if (normalizedProvider === 'yandex') {
+    if (!isYandexEnabled()) {
+      return res.json({
+        provider: 'YANDEX_MOCK',
+        city: city || 'Не указан',
+        type: type || 'pvz',
+        cost: 490,
+        etaDays: 2
+      });
+    }
+
+    try {
+      if (!process.env.YANDEX_CALC_URL) {
+        throw new Error('YANDEX_CALC_URL not set');
+      }
+
+      const payloadBody = { ...(req.body || {}) };
+      delete payloadBody.provider;
+
+      const response = await axios.post(
+        process.env.YANDEX_CALC_URL,
+        payloadBody,
+        { headers: buildYandexHeaders() }
+      );
+
+      const payload = response.data || {};
+      const directCost = payload.cost || payload.price || payload.total_sum || payload.delivery_sum || payload.deliveryPrice;
+      const etaDays = payload.etaDays || payload.eta || payload.period_min || payload.delivery_period_min || null;
+
+      return res.json({
+        provider: 'YANDEX',
+        raw: payload,
+        cost: typeof directCost === 'number' ? directCost : 0,
+        etaDays: etaDays || null
+      });
+    } catch (err) {
+      return res.status(500).json({ error: err.response?.data || err.message });
+    }
+  }
 
   if (!isCdekEnabled()) {
     return res.json({
@@ -54,12 +160,19 @@ exports.calculateDelivery = async (req, res) => {
     }
 
     const token = await getCdekToken();
+    const requestedCode = Number(req.body.toCityCode || req.body.cityCode || 0) || null;
+    const resolvedCode = requestedCode || await resolveCdekCityCode(city);
+    const toLocation = resolvedCode
+      ? { code: Number(resolvedCode) }
+      : city
+        ? { city }
+        : {};
 
     const response = await axios.post(
       process.env.CDEK_CALC_URL,
       {
         from_location: { code: Number(process.env.CDEK_FROM_CITY_CODE || 137) },
-        to_location: { code: Number(req.body.toCityCode || req.body.cityCode || 0) || undefined },
+        to_location: toLocation,
         packages: req.body.packages || [{ weight: 1000 }]
       },
       {
@@ -88,6 +201,48 @@ exports.calculateDelivery = async (req, res) => {
 };
 
 exports.getPvzList = async (req, res) => {
+  const normalizedProvider = String(req.query.provider || 'cdek').toLowerCase();
+
+  if (normalizedProvider === 'yandex') {
+    if (!isYandexEnabled()) {
+      return res.json([
+        {
+          id: 'YANDEX-PVZ-001',
+          city: req.query.city || 'Санкт-Петербург',
+          address: 'Литейный пр., 12',
+          workTime: '10:00-20:00'
+        },
+        {
+          id: 'YANDEX-PVZ-002',
+          city: req.query.city || 'Санкт-Петербург',
+          address: 'Гороховая, 18',
+          workTime: '09:00-21:00'
+        }
+      ]);
+    }
+
+    try {
+      if (!process.env.YANDEX_PVZ_URL) {
+        throw new Error('YANDEX_PVZ_URL not set');
+      }
+
+      const params = { ...req.query };
+      delete params.provider;
+      const response = await axios.get(process.env.YANDEX_PVZ_URL, {
+        headers: buildYandexHeaders(),
+        params
+      });
+
+      const payload = response.data || [];
+      const list = Array.isArray(payload)
+        ? payload
+        : payload.items || payload.points || payload.pickupPoints || payload.data || [];
+      return res.json(list);
+    } catch (err) {
+      return res.status(500).json({ error: err.response?.data || err.message });
+    }
+  }
+
   if (!isCdekEnabled()) {
     return res.json([
       {
@@ -111,11 +266,24 @@ exports.getPvzList = async (req, res) => {
     }
 
     const token = await getCdekToken();
+    const params = { ...req.query };
+    delete params.provider;
+    if (!params.type) params.type = 'PVZ';
+    const rawCity = params.city || params.cityName;
+    const directCode = Number(params.city_code || params.cityCode || 0) || null;
+    const resolvedCode = directCode || await resolveCdekCityCode(rawCity);
+    if (resolvedCode) {
+      params.city_code = resolvedCode;
+      delete params.city;
+      delete params.cityName;
+      delete params.cityCode;
+    }
+
     const response = await axios.get(process.env.CDEK_PVZ_URL, {
       headers: {
         'Authorization': `Bearer ${token}`
       },
-      params: req.query
+      params
     });
 
     res.json(response.data);
@@ -178,6 +346,11 @@ exports.status = async (req, res) => {
     hasAuth: Boolean(process.env.CDEK_AUTH_URL && (process.env.CDEK_CLIENT_ID || process.env.CDEK_ACCOUNT) && (process.env.CDEK_CLIENT_SECRET || process.env.CDEK_PASSWORD)),
     hasCalc: Boolean(process.env.CDEK_CALC_URL),
     hasPvz: Boolean(process.env.CDEK_PVZ_URL),
-    fromCityCode: process.env.CDEK_FROM_CITY_CODE || null
+    fromCityCode: process.env.CDEK_FROM_CITY_CODE || null,
+    yandex: {
+      enabled: isYandexEnabled(),
+      hasCalc: Boolean(process.env.YANDEX_CALC_URL),
+      hasPvz: Boolean(process.env.YANDEX_PVZ_URL)
+    }
   });
 };

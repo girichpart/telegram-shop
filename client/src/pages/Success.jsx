@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import api from '../api';
 import SiteShell from '../components/SiteShell.jsx';
 
 const Success = () => {
-  const navigate = useNavigate();
   const [params] = useSearchParams();
   const orderId = params.get('orderId');
   const [order, setOrder] = useState(null);
@@ -17,7 +16,7 @@ const Success = () => {
   }, [orderId]);
 
   return (
-    <SiteShell headerVariant="back" headerTitle="Готово" showFooter onBack={() => navigate(-1)}>
+    <SiteShell headerVariant="site" headerTitle="grått" showFooter showNotice>
       <div className="px-5 pb-16">
         <div className="mt-8 border border-black/10 bg-white p-6">
           <p className="text-[11px] uppercase tracking-[0.3em] opacity-60">Заказ оформлен</p>

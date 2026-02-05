@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import api from '../api';
 import { useCart } from '../context/CartContext.jsx';
 import SiteShell from '../components/SiteShell.jsx';
 
 const Product = () => {
   const { id } = useParams();
-  const navigate = useNavigate();
   const { addItem } = useCart();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -48,7 +47,7 @@ const Product = () => {
 
   if (loading) {
     return (
-      <SiteShell headerVariant="back" headerTitle="Товар" showFooter={false} onBack={() => navigate(-1)}>
+      <SiteShell headerVariant="site" headerTitle="grått" showFooter={false} showNotice>
         <div className="px-5 py-16 text-[11px] uppercase tracking-[0.3em] opacity-50">Загрузка...</div>
       </SiteShell>
     );
@@ -56,7 +55,7 @@ const Product = () => {
 
   if (!product) {
     return (
-      <SiteShell headerVariant="back" headerTitle="Товар" showFooter={false} onBack={() => navigate(-1)}>
+      <SiteShell headerVariant="site" headerTitle="grått" showFooter={false} showNotice>
         <div className="px-5 py-16 text-[11px] uppercase tracking-[0.3em] opacity-50">Товар не найден</div>
       </SiteShell>
     );
@@ -69,10 +68,20 @@ const Product = () => {
 
   const mainImage = product.images?.[selectedImage] || product.images?.[0] || 'https://via.placeholder.com/600';
 
+  const sizeStock = Array.isArray(availableSizes) && availableSizes.length > 0
+    ? availableSizes.map(s => s.stock || 0)
+    : [product.stock || 0];
+  const soldOut = sizeStock.every(stock => stock <= 0);
+
   return (
-    <SiteShell headerVariant="back" headerTitle="Карточка товара" showFooter={false} onBack={() => navigate(-1)}>
+    <SiteShell headerVariant="site" headerTitle="grått" showFooter={false} showNotice>
       <div className="px-5 pb-24">
-        <div className="mt-6 overflow-hidden rounded-md border border-black/10 bg-black/5">
+        <div className="mt-6 relative overflow-hidden rounded-md border border-black/10 bg-black/5">
+          {soldOut && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/60 text-[12px] uppercase tracking-[0.3em] text-black backdrop-blur">
+              SOLD OUT
+            </div>
+          )}
           <div className="aspect-[4/5] w-full">
             <img
               alt={product.name}
@@ -97,9 +106,16 @@ const Product = () => {
         )}
 
         <div className="mt-8">
-          <p className="text-[11px] uppercase tracking-[0.3em] opacity-60">
-            {product.category || 'Городская серия / FW24'}
-          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-[11px] uppercase tracking-[0.3em] opacity-60">
+              {product.category || 'Городская серия / FW24'}
+            </p>
+            {(product.statusTags || []).map(tag => (
+              <span key={tag} className="text-[10px] uppercase tracking-[0.2em] opacity-60">
+                {tag}
+              </span>
+            ))}
+          </div>
           <h1 className="heading-md mt-3">{product.name}</h1>
           <p className="mt-2 text-[13px] uppercase tracking-[0.24em] opacity-70">{product.price} ₽</p>
         </div>
@@ -158,10 +174,10 @@ const Product = () => {
         <button
           type="button"
           onClick={addToCart}
-          disabled={product.sizes && product.sizes.length > 0 && !selectedSize}
+          disabled={soldOut || (product.sizes && product.sizes.length > 0 && !selectedSize)}
           className="btn-primary flex w-full items-center justify-between rounded-md px-5 py-4 text-[12px] uppercase tracking-[0.3em]"
         >
-          <span>В корзину</span>
+          <span>{soldOut ? 'SOLD OUT' : 'В корзину'}</span>
           <span>{product.price} ₽</span>
         </button>
       </div>

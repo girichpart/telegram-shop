@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Home from './pages/Home.jsx';
+import Products from './pages/Products.jsx';
 import Product from './pages/Product.jsx';
 import Cart from './pages/Cart.jsx';
 import Checkout from './pages/Checkout.jsx';
@@ -22,19 +23,17 @@ function App() {
     }
   }, []);
 
-  if (!isTelegram) {
-    return (
-      <div className="min-h-screen bg-[--secondary] px-6 py-12 text-[11px] uppercase tracking-[0.3em]">
-        Откройте магазин в Telegram, чтобы продолжить.
-      </div>
-    );
-  }
-
   return (
     <CartProvider>
       <Router>
+        {!isTelegram && (
+          <div className="bg-[--secondary] px-5 py-3 text-[10px] uppercase tracking-[0.3em] opacity-60">
+            Локальный режим: часть функций Telegram может быть недоступна.
+          </div>
+        )}
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/catalog" element={<Products />} />
           <Route path="/product/:id" element={<Product />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/checkout" element={<Checkout />} />

@@ -11,8 +11,23 @@ const app = express();
 app.set('trust proxy', 1);
 
 const allowedOrigins = [process.env.CLIENT_ORIGIN, process.env.ADMIN_ORIGIN].filter(Boolean);
+const allowAllOrigins = process.env.CORS_ALLOW_ALL === 'true';
 app.use(cors({
-  origin: allowedOrigins.length ? allowedOrigins : '*'
+  origin: (origin, callback) => {
+    if (allowAllOrigins) {
+      return callback(null, true);
+    }
+    if (!origin) {
+      return callback(null, true);
+    }
+    if (!allowedOrigins.length) {
+      return callback(null, true);
+    }
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(null, false);
+  }
 }));
 app.use('/api', express.json({ limit: '2mb' }));
 app.use('/api', express.urlencoded({ extended: true }));
@@ -31,6 +46,7 @@ app.use('/api/payments', require('./src/routes/payments'));
 app.use('/api/delivery', require('./src/routes/delivery'));
 app.use('/api/track', require('./src/routes/track'));
 app.use('/api/settings', require('./src/routes/settings'));
+app.use('/api/customers', require('./src/routes/customers'));
 
 const devProxyEnabled = process.env.DEV_PROXY === 'true';
 const clientDevUrl = process.env.CLIENT_DEV_URL || 'http://localhost:5173';
@@ -142,4 +158,19 @@ mongoose.connect(process.env.MONGO_URI).then(async () => {
 }).catch(err => console.log(err));
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+const httpsKeyPath = process.env.HTTPS_KEY_PATH;
+const httpsCertPath = process.env.HTTPS_CERT_PATH;
+const httpsPort = process.env.HTTPS_PORT || PORT;
+
+if (httpsKeyPath && httpsCertPath && fs.existsSync(httpsKeyPath) && fs.existsSync(httpsCertPath)) {
+  const httpsServer = https.createServer({
+    key: fs.readFileSync(httpsKeyPath),
+    cert: fs.readFileSync(httpsCertPath)
+  }, app);
+
+  httpsServer.listen(httpsPort, () => {
+    console.log(`HTTPS server running on port ${httpsPort}`);
+  });
+} else {
+  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+}

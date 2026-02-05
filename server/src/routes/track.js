@@ -9,7 +9,8 @@ router.get('/', async (req, res) => {
   }
 
   try {
-    const orders = await Order.find({ 'telegram.id': String(telegramId) }).select('_id status totalAmount createdAt updatedAt delivery paymentStatus payment telegram phone');
+    const orders = await Order.find({ 'telegram.id': String(telegramId) })
+      .select('_id status totalAmount createdAt updatedAt delivery paymentStatus payment telegram phone products');
     res.json(orders.map(order => ({
       id: order._id.toString(),
       status: order.status,
@@ -18,6 +19,7 @@ router.get('/', async (req, res) => {
       updatedAt: order.updatedAt?.toISOString?.() || null,
       phone: order.phone,
       telegram: order.telegram || null,
+      products: order.products || [],
       delivery: order.delivery,
       deliveryStatus: order.delivery?.status || 'created',
       trackingNumber: order.delivery?.trackingNumber || null,

@@ -2,6 +2,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const axios = require('axios');
 const adminAuth = require('../middlewares/adminAuth');
+const Customer = require('../models/Customer');
 
 const router = express.Router();
 
@@ -91,6 +92,43 @@ router.get('/telegram/last-chat', adminAuth, async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ error: err.code || err.message });
+  }
+});
+
+router.post('/telegram/sync-contacts', adminAuth, async (req, res) => {
+  try {
+    const updates = await callTelegram('getUpdates', { limit: 100, timeout: 0 });
+    const list = Array.isArray(updates.result) ? updates.result : [];
+    let count = 0;
+
+    for (const update of list) {
+      const contact = update?.message?.contact;
+      const from = update?.message?.from || update?.message?.chat;
+      if (!contact || (!contact.phone_number && !from?.id)) continue;
+
+      const payload = {
+        telegramId: from?.id ? String(from.id) : undefined,
+        telegramUsername: from?.username || '',
+        firstName: from?.first_name || contact.first_name || '',
+        lastName: from?.last_name || contact.last_name || '',
+        phone: contact.phone_number || '',
+        lastSeenAt: new Date()
+      };
+
+      if (!payload.telegramId && !payload.phone) continue;
+
+      const query = payload.telegramId ? { telegramId: payload.telegramId } : { phone: payload.phone };
+      await Customer.findOneAndUpdate(
+        query,
+        { $set: payload, $setOnInsert: query },
+        { upsert: true }
+      );
+      count += 1;
+    }
+
+    res.json({ ok: true, count });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.code || err.message });
   }
 });
 

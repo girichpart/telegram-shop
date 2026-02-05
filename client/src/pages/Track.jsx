@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import SiteShell from '../components/SiteShell.jsx';
 
 const Track = () => {
-  const navigate = useNavigate();
   const [phone, setPhone] = useState('');
   const [orders, setOrders] = useState([]);
   const [error, setError] = useState('');
@@ -29,7 +27,7 @@ const Track = () => {
   };
 
   return (
-    <SiteShell headerVariant="back" headerTitle="Отслеживание" showFooter onBack={() => navigate(-1)}>
+    <SiteShell headerVariant="site" headerTitle="grått" showFooter showNotice>
       <div className="px-5 pb-16">
         <div className="mt-8 border border-black/10 bg-white p-5">
           <p className="text-[11px] uppercase tracking-[0.3em] opacity-60">Отследить по телефону</p>

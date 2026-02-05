@@ -1,14 +1,13 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext.jsx';
 import SiteShell from '../components/SiteShell.jsx';
 
 const Cart = () => {
-  const navigate = useNavigate();
   const { items, updateQuantity, removeItem, total } = useCart();
 
   return (
-    <SiteShell headerVariant="back" headerTitle="Корзина" showFooter={false} onBack={() => navigate(-1)}>
+    <SiteShell headerVariant="site" headerTitle="grått" showFooter={false} showNotice>
       <div className="px-5 pb-32">
         <div className="mt-8 flex items-center justify-between">
           <p className="text-[11px] uppercase tracking-[0.3em] opacity-60">Ваша корзина</p>

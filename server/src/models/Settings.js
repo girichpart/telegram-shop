@@ -5,7 +5,10 @@ const settingsSchema = new mongoose.Schema({
   heroTitle: { type: String, default: 'grått' },
   heroSubtitle: { type: String, default: 'Новая коллекция / Systems' },
   heroDescription: { type: String, default: 'Городская экипировка, собранная как система.' },
-  heroVideoUrl: { type: String, default: '' }
+  heroVideoUrl: { type: String, default: '' },
+  deliveryCdekEnabled: { type: Boolean, default: true },
+  deliveryYandexEnabled: { type: Boolean, default: false },
+  paymentYookassaEnabled: { type: Boolean, default: true }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Settings', settingsSchema);

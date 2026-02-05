@@ -130,6 +130,7 @@ const Header = ({ variant = 'site', title = 'grått', showNotice = true, onBack,
         <div className="absolute left-0 right-0 top-full z-40 border-b border-black/10 bg-[--secondary] px-5 py-6 shadow-sm">
           <div className="grid gap-3 text-[12px] uppercase tracking-[0.25em]">
             <Link to="/" onClick={() => setMenuOpen(false)} className="opacity-70 hover:opacity-100">Главная</Link>
+            <Link to="/catalog" onClick={() => setMenuOpen(false)} className="opacity-70 hover:opacity-100">Каталог</Link>
             <Link to="/account" onClick={() => setMenuOpen(false)} className="opacity-70 hover:opacity-100">Личный кабинет</Link>
             <Link to="/info/delivery" onClick={() => setMenuOpen(false)} className="opacity-70 hover:opacity-100">Доставка</Link>
             <Link to="/info/payment" onClick={() => setMenuOpen(false)} className="opacity-70 hover:opacity-100">Оплата</Link>

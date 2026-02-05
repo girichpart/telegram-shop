@@ -10,7 +10,9 @@ const sampleProducts = [
     description: '3-layer technical shell built for volatile urban conditions.',
     images: [
       'https://images.unsplash.com/photo-1471879832106-c7ab9e0cee23?auto=format&fit=crop&w=900&q=80'
-    ]
+    ],
+    statusTags: ['new'],
+    isActive: true
   },
   {
     name: 'Terrain Shoe 01',
@@ -18,7 +20,9 @@ const sampleProducts = [
     description: 'Rugged low-profile outsole with waterproof upper.',
     images: [
       'https://images.unsplash.com/photo-1460353581641-37baddab0fa2?auto=format&fit=crop&w=900&q=80'
-    ]
+    ],
+    statusTags: ['new'],
+    isActive: true
   },
   {
     name: 'X-Pac Sling Bag',
@@ -26,7 +30,9 @@ const sampleProducts = [
     description: 'Lightweight technical sling with waterproof X-Pac fabric.',
     images: [
       'https://images.unsplash.com/photo-1512436991641-6745cdb1723f?auto=format&fit=crop&w=900&q=80'
-    ]
+    ],
+    statusTags: ['new'],
+    isActive: true
   }
 ];
 
@@ -67,7 +73,9 @@ router.post('/seed', adminAuth, async (req, res) => {
       description: pick.description,
       category: pick.category,
       images: pick.images,
-      stock: Math.floor(2 + Math.random() * 10)
+      stock: Math.floor(2 + Math.random() * 10),
+      statusTags: ['new'],
+      isActive: true
     });
 
     res.json(product);

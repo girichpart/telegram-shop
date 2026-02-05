@@ -10,15 +10,29 @@ const emptyForm = {
   stock: '',
   images: [],
   sizes: [],
-  techSpecs: []
+  techSpecs: [],
+  isActive: true,
+  statusTags: []
 };
 
 const emptySettings = {
   heroTitle: '',
   heroSubtitle: '',
   heroDescription: '',
-  heroVideoUrl: ''
+  heroVideoUrl: '',
+  deliveryCdekEnabled: true,
+  deliveryYandexEnabled: false,
+  paymentYookassaEnabled: true
 };
+
+const orderStatuses = [
+  { value: 'new', label: 'Новый' },
+  { value: 'processing', label: 'В обработке' },
+  { value: 'paid', label: 'Оплачен' },
+  { value: 'shipped', label: 'Отгружен' },
+  { value: 'delivered', label: 'Доставлен' },
+  { value: 'canceled', label: 'Отменен' }
+];
 
 function App() {
   const [token, setToken] = useState(localStorage.getItem('admin_token'));
@@ -26,9 +40,14 @@ function App() {
   const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
   const [products, setProducts] = useState([]);
-  const [orders, setOrders] = useState([]);
   const [clients, setClients] = useState([]);
   const [clientsLoading, setClientsLoading] = useState(false);
+  const [orders, setOrders] = useState([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const [ordersError, setOrdersError] = useState('');
+  const [orderQuery, setOrderQuery] = useState('');
+  const [orderSavingId, setOrderSavingId] = useState('');
+  const [clientFilter, setClientFilter] = useState('');
   const [query, setQuery] = useState('');
   const [form, setForm] = useState(emptyForm);
   const [settings, setSettings] = useState(emptySettings);
@@ -46,6 +65,9 @@ function App() {
   const [botLoading, setBotLoading] = useState(false);
   const [botError, setBotError] = useState('');
   const [chatId, setChatId] = useState('');
+  const [syncingContacts, setSyncingContacts] = useState(false);
+  const [syncResult, setSyncResult] = useState('');
+  const [statusInput, setStatusInput] = useState('');
 
   const fetchProducts = async () => {
     setLoading(true);
@@ -60,48 +82,22 @@ function App() {
     }
   };
 
-  const buildClients = (ordersList) => {
-    const map = new Map();
-    ordersList.forEach(order => {
-      const telegramId = order.telegram?.id || '';
-      const phone = order.phone || '';
-      const key = telegramId ? `tg:${telegramId}` : `phone:${phone}`;
-      const name = [order.telegram?.firstName, order.telegram?.lastName].filter(Boolean).join(' ').trim();
-      const existing = map.get(key) || {
-        id: key,
-        telegramId,
-        telegramUsername: order.telegram?.username || '',
-        phone,
-        name: name || order.telegram?.username || 'Клиент',
-        totalOrders: 0,
-        totalAmount: 0,
-        lastOrderAt: null
-      };
-
-      existing.totalOrders += 1;
-      existing.totalAmount += Number(order.totalAmount || 0);
-      const createdAt = order.createdAt ? new Date(order.createdAt) : null;
-      if (createdAt && (!existing.lastOrderAt || createdAt > existing.lastOrderAt)) {
-        existing.lastOrderAt = createdAt;
-      }
-
-      map.set(key, existing);
-    });
-
-    return Array.from(map.values()).sort((a, b) => {
-      if (!a.lastOrderAt) return 1;
-      if (!b.lastOrderAt) return -1;
-      return b.lastOrderAt - a.lastOrderAt;
-    });
-  };
-
-  const fetchOrders = async () => {
+  const fetchCustomers = async () => {
     setClientsLoading(true);
     try {
-      const res = await api.get('/api/orders');
+      const res = await api.get('/api/customers');
       const list = Array.isArray(res.data) ? res.data : [];
-      setOrders(list);
-      setClients(buildClients(list));
+      const mapped = list.map(item => ({
+        id: item._id,
+        telegramId: item.telegramId || '',
+        telegramUsername: item.telegramUsername || '',
+        phone: item.phone || '',
+        name: [item.firstName, item.lastName].filter(Boolean).join(' ').trim() || item.telegramUsername || 'Клиент',
+        totalOrders: item.totalOrders || 0,
+        totalAmount: item.totalAmount || 0,
+        lastOrderAt: item.lastSeenAt ? new Date(item.lastSeenAt) : null
+      }));
+      setClients(mapped);
     } catch (err) {
       console.error(err);
       setClients([]);
@@ -121,6 +117,36 @@ function App() {
       setSettingsError('Не удалось загрузить настройки');
     } finally {
       setSettingsLoading(false);
+    }
+  };
+
+  const fetchOrders = async () => {
+    setOrdersLoading(true);
+    setOrdersError('');
+    try {
+      const res = await api.get('/api/orders');
+      const list = Array.isArray(res.data) ? res.data : [];
+      setOrders(list);
+    } catch (err) {
+      console.error(err);
+      setOrders([]);
+      setOrdersError('Не удалось загрузить заказы');
+    } finally {
+      setOrdersLoading(false);
+    }
+  };
+
+  const updateOrderStatus = async (orderId, payload) => {
+    if (!orderId) return;
+    setOrderSavingId(orderId);
+    try {
+      await api.patch(`/api/orders/${orderId}/status`, payload);
+      await fetchOrders();
+    } catch (err) {
+      console.error(err);
+      setOrdersError('Не удалось обновить заказ');
+    } finally {
+      setOrderSavingId('');
     }
   };
 
@@ -148,7 +174,17 @@ function App() {
       const res = await api.post('/api/uploads/video', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
-      setSettings(prev => ({ ...prev, heroVideoUrl: res.data.url }));
+      let nextUrl = res.data.url;
+      try {
+        const parsed = new URL(nextUrl, apiBase);
+        const base = new URL(apiBase);
+        if (parsed.host === base.host) {
+          nextUrl = parsed.pathname;
+        }
+      } catch (err) {
+        // keep original
+      }
+      setSettings(prev => ({ ...prev, heroVideoUrl: nextUrl }));
     } catch (err) {
       console.error(err);
       setSettingsError('Не удалось загрузить видео');
@@ -187,6 +223,23 @@ function App() {
     }
   };
 
+  const syncContacts = async () => {
+    setSyncingContacts(true);
+    setSyncResult('');
+    setBotError('');
+    try {
+      const res = await api.post('/api/admin/telegram/sync-contacts');
+      const count = res.data?.count ?? 0;
+      setSyncResult(`Импортировано контактов: ${count}`);
+      await fetchCustomers();
+    } catch (err) {
+      console.error(err);
+      setBotError('Не удалось синхронизировать контакты');
+    } finally {
+      setSyncingContacts(false);
+    }
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('admin_token');
     setToken(null);
@@ -212,12 +265,27 @@ function App() {
   useEffect(() => {
     if (!token) return;
     if (activeTab === 'clients') {
+      fetchCustomers();
+    }
+    if (activeTab === 'orders') {
       fetchOrders();
+      fetchCustomers();
     }
     if (activeTab === 'settings') {
       fetchSettings();
       fetchBotStatus();
     }
+    if (activeTab === 'delivery') {
+      fetchSettings();
+    }
+  }, [token, activeTab]);
+
+  useEffect(() => {
+    if (!token || activeTab !== 'orders') return undefined;
+    const interval = setInterval(() => {
+      fetchOrders();
+    }, 20000);
+    return () => clearInterval(interval);
   }, [token, activeTab]);
 
   const filtered = useMemo(() => {
@@ -235,8 +303,41 @@ function App() {
     return { totalProducts, totalStock, totalValue };
   }, [products]);
 
+  const filteredOrders = useMemo(() => {
+    let result = orders;
+    if (clientFilter) {
+      const [kind, value] = clientFilter.split(':');
+      result = result.filter(order => {
+        if (kind === 'tg') {
+          return String(order.telegram?.id || '') === value;
+        }
+        if (kind === 'phone') {
+          return String(order.phone || '') === value;
+        }
+        return true;
+      });
+    }
+    if (!orderQuery) return result;
+    const needle = orderQuery.toLowerCase().trim();
+    return result.filter(order => {
+      const fields = [
+        order._id,
+        order.phone,
+        order.status,
+        order.paymentStatus,
+        order.telegram?.id,
+        order.telegram?.username
+      ]
+        .filter(Boolean)
+        .map(value => String(value).toLowerCase());
+
+      return fields.some(value => value.includes(needle));
+    });
+  }, [orders, orderQuery, clientFilter]);
+
   const handleSelect = (product) => {
     setSelectedId(product._id);
+    setStatusInput('');
     setForm({
       name: product.name || '',
       price: product.price ?? '',
@@ -245,12 +346,15 @@ function App() {
       stock: product.stock ?? '',
       images: product.images || [],
       sizes: product.sizes || [],
-      techSpecs: product.techSpecs || []
+      techSpecs: product.techSpecs || [],
+      isActive: product.isActive !== false,
+      statusTags: product.statusTags || []
     });
   };
 
   const handleNew = () => {
     setSelectedId(null);
+    setStatusInput('');
     setForm(emptyForm);
   };
 
@@ -271,7 +375,9 @@ function App() {
       stock: Number(form.stock) || 0,
       images: form.images,
       sizes: form.sizes,
-      techSpecs: form.techSpecs
+      techSpecs: form.techSpecs,
+      isActive: form.isActive,
+      statusTags: (form.statusTags || []).map(tag => String(tag || '').trim()).filter(Boolean)
     };
 
     try {
@@ -388,6 +494,23 @@ function App() {
     }));
   };
 
+  const handleAddStatusTag = () => {
+    const nextTag = statusInput.trim();
+    if (!nextTag) return;
+    setForm(prev => ({
+      ...prev,
+      statusTags: Array.from(new Set([...(prev.statusTags || []), nextTag]))
+    }));
+    setStatusInput('');
+  };
+
+  const handleRemoveStatusTag = (tag) => {
+    setForm(prev => ({
+      ...prev,
+      statusTags: (prev.statusTags || []).filter(item => item !== tag)
+    }));
+  };
+
   const handleLogin = async () => {
     if (!login || !password) {
       setError('Введите логин и пароль');
@@ -460,10 +583,24 @@ function App() {
           </button>
           <button
             type="button"
+            className={`admin-tab ${activeTab === 'orders' ? 'active' : ''}`}
+            onClick={() => setActiveTab('orders')}
+          >
+            Заказы
+          </button>
+          <button
+            type="button"
             className={`admin-tab ${activeTab === 'clients' ? 'active' : ''}`}
             onClick={() => setActiveTab('clients')}
           >
             Клиенты
+          </button>
+          <button
+            type="button"
+            className={`admin-tab ${activeTab === 'delivery' ? 'active' : ''}`}
+            onClick={() => setActiveTab('delivery')}
+          >
+            Доставка и оплата
           </button>
           <button
             type="button"
@@ -511,10 +648,26 @@ function App() {
         <header className="admin-header">
           <div>
             <p className="admin-eyebrow">
-              {activeTab === 'products' ? 'Product control' : activeTab === 'clients' ? 'Customer control' : 'Store settings'}
+              {activeTab === 'products'
+                ? 'Product control'
+                : activeTab === 'orders'
+                  ? 'Order control'
+                  : activeTab === 'clients'
+                    ? 'Customer control'
+                    : activeTab === 'delivery'
+                      ? 'Delivery & payment'
+                      : 'Store settings'}
             </p>
             <h1 className="admin-title">
-              {activeTab === 'products' ? 'Админка товаров' : activeTab === 'clients' ? 'Клиенты' : 'Настройки витрины'}
+              {activeTab === 'products'
+                ? 'Админка товаров'
+                : activeTab === 'orders'
+                  ? 'История заказов'
+                  : activeTab === 'clients'
+                    ? 'Клиенты'
+                    : activeTab === 'delivery'
+                      ? 'Доставка и оплата'
+                      : 'Настройки витрины'}
             </h1>
           </div>
           <div className="admin-actions">
@@ -526,7 +679,7 @@ function App() {
                 {saving ? 'Сохраняю...' : 'Сохранить'}
               </button>
             )}
-            {activeTab === 'settings' && (
+            {(activeTab === 'settings' || activeTab === 'delivery') && (
               <button
                 onClick={handleSettingsSave}
                 className="admin-btn primary"
@@ -585,13 +738,56 @@ function App() {
                     className="admin-input"
                   />
                 </div>
+            <input
+              type="text"
+              placeholder="Категория"
+              value={form.category}
+              onChange={e => setForm({ ...form, category: e.target.value })}
+              className="admin-input"
+            />
+            <div className="admin-grid two">
+              <label className="admin-checkbox">
                 <input
-                  type="text"
-                  placeholder="Категория"
-                  value={form.category}
-                  onChange={e => setForm({ ...form, category: e.target.value })}
-                  className="admin-input"
+                  type="checkbox"
+                  checked={form.isActive}
+                  onChange={e => setForm({ ...form, isActive: e.target.checked })}
                 />
+                <span>Активный товар</span>
+              </label>
+              <div>
+                <div className="admin-panel-head">
+                  <h3>Статусы товара</h3>
+                </div>
+                <div className="admin-status-input">
+                  <input
+                    type="text"
+                    placeholder="Например: new, limited"
+                    value={statusInput}
+                    onChange={e => setStatusInput(e.target.value)}
+                    className="admin-input"
+                  />
+                  <button type="button" className="admin-btn ghost" onClick={handleAddStatusTag}>
+                    Добавить
+                  </button>
+                </div>
+                <div className="admin-status-tags">
+                  {(form.statusTags || []).length === 0 && (
+                    <p className="admin-muted">Статусы не заданы.</p>
+                  )}
+                  {(form.statusTags || []).map(tag => (
+                    <button
+                      type="button"
+                      key={tag}
+                      className="admin-tag"
+                      onClick={() => handleRemoveStatusTag(tag)}
+                    >
+                      {tag}
+                      <span>×</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
                 <textarea
                   placeholder="Описание"
                   value={form.description}
@@ -721,8 +917,89 @@ function App() {
                     )}
                   </div>
                   <div>
-                    <p className="admin-card-price">{client.totalAmount.toLocaleString('ru-RU')} ₽</p>
-                    <p className="admin-card-subtitle">{client.totalOrders} заказ(а)</p>
+                    <p className="admin-card-subtitle">
+                      {client.lastOrderAt ? `Активен: ${client.lastOrderAt.toLocaleDateString('ru-RU')}` : 'Нет активности'}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {activeTab === 'orders' && (
+          <section className="admin-panel">
+            <div className="admin-panel-head">
+              <h2>История заказов</h2>
+              <p className="admin-muted">{filteredOrders.length} заказов</p>
+            </div>
+            <div className="admin-grid two">
+              <input
+                type="text"
+                placeholder="Поиск: телефон, chat_id, статус"
+                value={orderQuery}
+                onChange={e => setOrderQuery(e.target.value)}
+                className="admin-input"
+              />
+              <select
+                className="admin-input"
+                value={clientFilter}
+                onChange={e => setClientFilter(e.target.value)}
+              >
+                <option value="">Все клиенты</option>
+                {clients.map(client => {
+                  const value = client.telegramId ? `tg:${client.telegramId}` : client.phone ? `phone:${client.phone}` : '';
+                  if (!value) return null;
+                  return (
+                    <option key={client.id} value={value}>
+                      {client.name || 'Клиент'} {client.phone ? `· ${client.phone}` : ''}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+            {ordersLoading && <p className="admin-muted">Загрузка...</p>}
+            {ordersError && <p className="admin-error">{ordersError}</p>}
+            {!ordersLoading && filteredOrders.length === 0 && (
+              <p className="admin-muted">Заказов пока нет.</p>
+            )}
+            <div className="admin-list">
+              {filteredOrders.map(order => (
+                <div key={order._id} className="admin-card">
+                  <div>
+                    <p className="admin-card-title">Заказ #{order._id?.slice(-6)}</p>
+                    <p className="admin-card-subtitle">
+                      {order.createdAt ? new Date(order.createdAt).toLocaleString('ru-RU') : '—'}
+                    </p>
+                    <p className="admin-card-subtitle">Телефон: {order.phone || '—'}</p>
+                    {order.telegram?.id && (
+                      <p className="admin-card-subtitle">chat_id: {order.telegram.id}</p>
+                    )}
+                    <p className="admin-card-subtitle">Статус: {order.status}</p>
+                    <p className="admin-card-subtitle">Оплата: {order.paymentStatus}</p>
+                    <p className="admin-card-subtitle">Доставка: {order.delivery?.status || '—'}</p>
+                    {order.products?.length > 0 && (
+                      <p className="admin-card-subtitle">
+                        Товары: {order.products.map(item => `${item.name} × ${item.quantity}${item.size ? ` (${item.size})` : ''}`).join(', ')}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <p className="admin-card-price">{Number(order.totalAmount || 0).toLocaleString('ru-RU')} ₽</p>
+                    <div className="admin-order-actions">
+                      <select
+                        className="admin-input"
+                        value={order.status || 'new'}
+                        onChange={e => updateOrderStatus(order._id, { status: e.target.value })}
+                        disabled={orderSavingId === order._id}
+                      >
+                        {orderStatuses.map(status => (
+                          <option key={status.value} value={status.value}>
+                            {status.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -819,6 +1096,9 @@ function App() {
                     {botLoading ? 'Проверяю...' : 'Проверить'}
                   </button>
                   <button onClick={fetchChatId} className="admin-btn ghost">Получить chat_id</button>
+                  <button onClick={syncContacts} className="admin-btn ghost" disabled={syncingContacts}>
+                    {syncingContacts ? 'Синхронизация...' : 'Синхронизировать контакты'}
+                  </button>
                   {botLink && (
                     <a href={botLink} target="_blank" rel="noreferrer" className="admin-btn ghost">Открыть бота</a>
                   )}
@@ -837,9 +1117,46 @@ function App() {
               {botStatus?.hasUpdates === false && (
                 <p className="admin-muted">Пока нет сообщений. Нажмите «Открыть бота» и отправьте /start.</p>
               )}
+              {syncResult && <p className="admin-muted">{syncResult}</p>}
               {botError && <p className="admin-error">{botError}</p>}
             </section>
           </>
+        )}
+
+        {activeTab === 'delivery' && (
+          <section className="admin-panel">
+            <div className="admin-panel-head">
+              <h2>Доставка и оплата</h2>
+              <p className="admin-muted">Управление способами</p>
+            </div>
+            <div className="admin-grid two">
+              <label className="admin-toggle">
+                <input
+                  type="checkbox"
+                  checked={Boolean(settings.deliveryCdekEnabled)}
+                  onChange={e => setSettings({ ...settings, deliveryCdekEnabled: e.target.checked })}
+                />
+                <span>СДЭК ПВЗ</span>
+              </label>
+              <label className="admin-toggle">
+                <input
+                  type="checkbox"
+                  checked={Boolean(settings.deliveryYandexEnabled)}
+                  onChange={e => setSettings({ ...settings, deliveryYandexEnabled: e.target.checked })}
+                />
+                <span>Яндекс доставка</span>
+              </label>
+              <label className="admin-toggle">
+                <input
+                  type="checkbox"
+                  checked={Boolean(settings.paymentYookassaEnabled)}
+                  onChange={e => setSettings({ ...settings, paymentYookassaEnabled: e.target.checked })}
+                />
+                <span>ЮKassa</span>
+              </label>
+            </div>
+            <p className="admin-muted">Если выключить метод, кнопки и блоки будут скрыты на витрине.</p>
+          </section>
         )}
       </main>
     </div>

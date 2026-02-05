@@ -7,6 +7,8 @@ const productSchema = new mongoose.Schema({
   images: [String],
   category: String,
   stock: { type: Number, default: 10 },
+  isActive: { type: Boolean, default: true },
+  statusTags: [String],
   sizes: [{
     label: String,
     stock: { type: Number, default: 0 }

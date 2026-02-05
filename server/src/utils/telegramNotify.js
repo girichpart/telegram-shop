@@ -43,6 +43,18 @@ const formatDeliveryStatus = (status) => {
   return value.replace(/[_-]+/g, ' ');
 };
 
+const formatOrderStatus = (status) => {
+  if (!status) return 'обновлено';
+  const value = String(status).toLowerCase();
+  if (value.includes('paid')) return 'оплачен';
+  if (value.includes('cancel')) return 'отменен';
+  if (value.includes('deliver')) return 'доставлен';
+  if (value.includes('ship')) return 'отгружен';
+  if (value.includes('process')) return 'в обработке';
+  if (value.includes('new')) return 'новый';
+  return value.replace(/[_-]+/g, ' ');
+};
+
 const notifyOrder = async (order, type, extra = {}) => {
   if (!order) return;
 
@@ -59,6 +71,7 @@ const notifyOrder = async (order, type, extra = {}) => {
   if (type === 'paid') statusLine = 'Статус: оплачен';
   if (type === 'canceled') statusLine = 'Статус: отменен';
   if (type === 'delivery') statusLine = `Доставка: ${formatDeliveryStatus(extra.deliveryStatus)}`;
+  if (type === 'status') statusLine = `Статус: ${formatOrderStatus(extra.status || order.status)}`;
 
   const lines = [
     ...baseLines,
@@ -71,7 +84,7 @@ const notifyOrder = async (order, type, extra = {}) => {
   }
 
   if (extra.trackingNumber) {
-    lines.push('', `Трек-номер СДЭК: ${extra.trackingNumber}`);
+    lines.push('', `Трек-номер: ${extra.trackingNumber}`);
   }
 
   if (extra.paymentId) {
@@ -91,7 +104,7 @@ const notifyOrder = async (order, type, extra = {}) => {
       message
     ];
     if (type === 'delivery' && extra.deliveryStatus) {
-      adminLines.push(`RAW CDEK: ${extra.deliveryStatus}`);
+      adminLines.push(`RAW DELIVERY: ${extra.deliveryStatus}`);
     }
     await sendMessage(adminChatId, adminLines.join('\n'));
   }

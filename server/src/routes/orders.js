@@ -4,6 +4,7 @@ const Order = require('../models/Order');
 const Product = require('../models/Product');
 const adminAuth = require('../middlewares/adminAuth');
 const { notifyOrder } = require('../utils/telegramNotify');
+const Customer = require('../models/Customer');
 
 // Создать заказ
 router.post('/', async (req, res) => {
@@ -11,9 +12,6 @@ router.post('/', async (req, res) => {
 
   if (!phone || !email || !Array.isArray(products) || products.length === 0) {
     return res.status(400).json({ error: 'Неверные данные заказа' });
-  }
-  if (!telegram?.id) {
-    return res.status(400).json({ error: 'Необходим Telegram ID' });
   }
 
   try {
@@ -82,6 +80,9 @@ router.post('/', async (req, res) => {
       }
     }
 
+    const deliveryProvider = delivery?.provider || 'cdek';
+    const deliveryType = delivery?.type || 'pvz';
+
     const order = await Order.create({
       phone,
       email,
@@ -100,8 +101,8 @@ router.post('/', async (req, res) => {
         status: 'pending'
       },
       delivery: {
-        provider: 'cdek',
-        type: 'pvz',
+        provider: deliveryProvider,
+        type: deliveryType,
         address: delivery?.address || '',
         city: delivery?.city || '',
         pvz: delivery?.pvz || '',
@@ -109,6 +110,33 @@ router.post('/', async (req, res) => {
         status: 'created'
       }
     });
+
+    try {
+      const telegramPayload = telegram ? {
+        id: telegram.id ? String(telegram.id) : undefined,
+        username: telegram.username || '',
+        firstName: telegram.firstName || '',
+        lastName: telegram.lastName || ''
+      } : {};
+      const customerQuery = telegramPayload.id ? { telegramId: telegramPayload.id } : { phone };
+      await Customer.findOneAndUpdate(
+        customerQuery,
+        {
+          $set: {
+            phone,
+            telegramId: telegramPayload.id,
+            telegramUsername: telegramPayload.username,
+            firstName: telegramPayload.firstName,
+            lastName: telegramPayload.lastName,
+            lastSeenAt: new Date()
+          },
+          $setOnInsert: customerQuery
+        },
+        { upsert: true }
+      );
+    } catch (err) {
+      console.error('Customer upsert error:', err.message);
+    }
 
     await notifyOrder(order, 'created');
     res.json(order);
@@ -132,6 +160,38 @@ router.get('/:id', async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
     if (!order) return res.status(404).json({ error: 'Заказ не найден' });
+    res.json(order);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Обновить статус заказа (админ)
+router.patch('/:id/status', adminAuth, async (req, res) => {
+  const { status, paymentStatus, deliveryStatus, trackingNumber } = req.body || {};
+  const update = {};
+
+  if (status) update.status = status;
+  if (paymentStatus) update.paymentStatus = paymentStatus;
+  if (deliveryStatus) update['delivery.status'] = deliveryStatus;
+  if (trackingNumber) update['delivery.trackingNumber'] = trackingNumber;
+  if (deliveryStatus || trackingNumber) {
+    update['delivery.updatedAt'] = new Date();
+  }
+
+  if (!Object.keys(update).length) {
+    return res.status(400).json({ error: 'Нет данных для обновления' });
+  }
+
+  try {
+    const order = await Order.findByIdAndUpdate(req.params.id, { $set: update }, { new: true });
+    if (!order) return res.status(404).json({ error: 'Заказ не найден' });
+
+    await notifyOrder(order, 'status', {
+      status: status || order.status,
+      deliveryStatus: deliveryStatus || order.delivery?.status
+    });
+
     res.json(order);
   } catch (err) {
     res.status(500).json({ error: err.message });
