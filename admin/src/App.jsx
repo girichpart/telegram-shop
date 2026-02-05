@@ -315,6 +315,10 @@ function App() {
     if (activeTab === 'delivery') {
       fetchSettings();
     }
+    if (activeTab === 'integrations') {
+      fetchSettings();
+      fetchBotStatus();
+    }
   }, [token, activeTab]);
 
   useEffect(() => {
@@ -658,6 +662,13 @@ function App() {
           </button>
           <button
             type="button"
+            className={`admin-tab ${activeTab === 'integrations' ? 'active' : ''}`}
+            onClick={() => setActiveTab('integrations')}
+          >
+            Интеграции
+          </button>
+          <button
+            type="button"
             className={`admin-tab ${activeTab === 'settings' ? 'active' : ''}`}
             onClick={() => setActiveTab('settings')}
           >
@@ -706,10 +717,12 @@ function App() {
                 ? 'Product control'
                 : activeTab === 'orders'
                   ? 'Order control'
-                  : activeTab === 'clients'
+                : activeTab === 'clients'
                     ? 'Customer control'
                     : activeTab === 'delivery'
                       ? 'Delivery & payment'
+                      : activeTab === 'integrations'
+                        ? 'Integration keys'
                       : 'Store settings'}
             </p>
             <h1 className="admin-title">
@@ -721,6 +734,8 @@ function App() {
                     ? 'Клиенты'
                     : activeTab === 'delivery'
                       ? 'Доставка и оплата'
+                      : activeTab === 'integrations'
+                        ? 'Интеграции'
                       : 'Настройки витрины'}
             </h1>
           </div>
@@ -733,7 +748,7 @@ function App() {
                 {saving ? 'Сохраняю...' : 'Сохранить'}
               </button>
             )}
-            {(activeTab === 'settings' || activeTab === 'delivery') && (
+            {(activeTab === 'settings' || activeTab === 'delivery' || activeTab === 'integrations') && (
               <button
                 onClick={handleSettingsSave}
                 className="admin-btn primary"
@@ -1120,108 +1135,7 @@ function App() {
               {settingsError && <p className="admin-error">{settingsError}</p>}
             </section>
 
-            <section className="admin-panel">
-              <div className="admin-panel-head">
-                <h2>Интеграции</h2>
-                <p className="admin-muted">Статусы сервисов</p>
-              </div>
-              <div className="admin-grid two">
-                <div className="admin-stat">
-                  <p className="admin-stat-label">СДЭК</p>
-                  <p className="admin-stat-value">{cdekStatus?.enabled ? 'ON' : 'OFF'}</p>
-                </div>
-                <div className="admin-stat">
-                  <p className="admin-stat-label">Telegram бот</p>
-                  <p className="admin-stat-value">{botStatus?.ok ? 'ON' : 'OFF'}</p>
-                </div>
-              </div>
-              {cdekStatus && (
-                <div className="admin-stat">
-                  <p className="admin-stat-label">СДЭК API</p>
-                  <p className="admin-stat-value">
-                    auth {cdekStatus.hasAuth ? 'ok' : 'missing'} · calc {cdekStatus.hasCalc ? 'ok' : 'missing'} · pvz {cdekStatus.hasPvz ? 'ok' : 'missing'}
-                  </p>
-                </div>
-              )}
-              <div className="admin-panel-head">
-                <h3>Telegram настройки</h3>
-                <div className="admin-actions">
-                  <button onClick={fetchBotStatus} className="admin-btn ghost" disabled={botLoading}>
-                    {botLoading ? 'Проверяю...' : 'Проверить'}
-                  </button>
-                  <button onClick={fetchChatId} className="admin-btn ghost">Получить chat_id</button>
-                  <button onClick={syncContacts} className="admin-btn ghost" disabled={syncingContacts}>
-                    {syncingContacts ? 'Синхронизация...' : 'Синхронизировать контакты'}
-                  </button>
-                  {botLink && (
-                    <a href={botLink} target="_blank" rel="noreferrer" className="admin-btn ghost">Открыть бота</a>
-                  )}
-                </div>
-              </div>
-              <div className="admin-grid two">
-                <div className="admin-stat">
-                  <p className="admin-stat-label">Bot username</p>
-                  <p className="admin-stat-value">{botUsername || '—'}</p>
-                </div>
-                <div className="admin-stat">
-                  <p className="admin-stat-label">chat_id</p>
-                  <p className="admin-stat-value">{chatId || '—'}</p>
-                </div>
-              </div>
-              <div className="admin-grid two">
-                <div className="admin-status-input">
-                  <input
-                    type="text"
-                    placeholder="Telegram ID или @username"
-                    value={adminChatInput}
-                    onChange={e => setAdminChatInput(e.target.value)}
-                    className="admin-input"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => handleAddAdminChatId(adminChatInput)}
-                    className="admin-btn ghost"
-                  >
-                    Добавить
-                  </button>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (chatId) {
-                      handleAddAdminChatId(chatId);
-                    }
-                  }}
-                  className="admin-btn ghost"
-                >
-                  Использовать найденный chat_id
-                </button>
-              </div>
-              <div className="admin-status-tags">
-                {(settings.telegramAdminChatIds || []).length === 0 && (
-                  <p className="admin-muted">Администраторы не добавлены.</p>
-                )}
-                {(settings.telegramAdminChatIds || []).map(id => (
-                  <button
-                    key={id}
-                    type="button"
-                    className="admin-tag"
-                    onClick={() => handleRemoveAdminChatId(id)}
-                  >
-                    {id}
-                    <span>×</span>
-                  </button>
-                ))}
-              </div>
-              {botStatus?.hasUpdates === false && (
-                <p className="admin-muted">Пока нет сообщений. Нажмите «Открыть бота» и отправьте /start.</p>
-              )}
-              <p className="admin-muted">
-                Можно добавить числовой Telegram ID или @username. Для @username пользователь должен отправить /start боту.
-              </p>
-              {syncResult && <p className="admin-muted">{syncResult}</p>}
-              {botError && <p className="admin-error">{botError}</p>}
-            </section>
+            
           </>
         )}
 
@@ -1289,6 +1203,111 @@ function App() {
               </div>
             )}
             <p className="admin-muted">Если выключить метод, кнопки и блоки будут скрыты на витрине.</p>
+          </section>
+        )}
+
+        {activeTab === 'integrations' && (
+          <section className="admin-panel">
+            <div className="admin-panel-head">
+              <h2>Интеграции</h2>
+              <p className="admin-muted">Ключи и уведомления</p>
+            </div>
+            <div className="admin-grid two">
+              <div className="admin-stat">
+                <p className="admin-stat-label">СДЭК</p>
+                <p className="admin-stat-value">{cdekStatus?.enabled ? 'ON' : 'OFF'}</p>
+              </div>
+              <div className="admin-stat">
+                <p className="admin-stat-label">Telegram бот</p>
+                <p className="admin-stat-value">{botStatus?.ok ? 'ON' : 'OFF'}</p>
+              </div>
+            </div>
+            {cdekStatus && (
+              <div className="admin-stat">
+                <p className="admin-stat-label">СДЭК API</p>
+                <p className="admin-stat-value">
+                  auth {cdekStatus.hasAuth ? 'ok' : 'missing'} · calc {cdekStatus.hasCalc ? 'ok' : 'missing'} · pvz {cdekStatus.hasPvz ? 'ok' : 'missing'}
+                </p>
+              </div>
+            )}
+            <div className="admin-panel-head">
+              <h3>Telegram настройки</h3>
+              <div className="admin-actions">
+                <button onClick={fetchBotStatus} className="admin-btn ghost" disabled={botLoading}>
+                  {botLoading ? 'Проверяю...' : 'Проверить'}
+                </button>
+                <button onClick={fetchChatId} className="admin-btn ghost">Получить chat_id</button>
+                <button onClick={syncContacts} className="admin-btn ghost" disabled={syncingContacts}>
+                  {syncingContacts ? 'Синхронизация...' : 'Синхронизировать контакты'}
+                </button>
+                {botLink && (
+                  <a href={botLink} target="_blank" rel="noreferrer" className="admin-btn ghost">Открыть бота</a>
+                )}
+              </div>
+            </div>
+            <div className="admin-grid two">
+              <div className="admin-stat">
+                <p className="admin-stat-label">Bot username</p>
+                <p className="admin-stat-value">{botUsername || '—'}</p>
+              </div>
+              <div className="admin-stat">
+                <p className="admin-stat-label">chat_id</p>
+                <p className="admin-stat-value">{chatId || '—'}</p>
+              </div>
+            </div>
+            <div className="admin-grid two">
+              <div className="admin-status-input">
+                <input
+                  type="text"
+                  placeholder="Telegram ID или @username"
+                  value={adminChatInput}
+                  onChange={e => setAdminChatInput(e.target.value)}
+                  className="admin-input"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleAddAdminChatId(adminChatInput)}
+                  className="admin-btn ghost"
+                >
+                  Добавить
+                </button>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  if (chatId) {
+                    handleAddAdminChatId(chatId);
+                  }
+                }}
+                className="admin-btn ghost"
+              >
+                Использовать найденный chat_id
+              </button>
+            </div>
+            <div className="admin-status-tags">
+              {(settings.telegramAdminChatIds || []).length === 0 && (
+                <p className="admin-muted">Администраторы не добавлены.</p>
+              )}
+              {(settings.telegramAdminChatIds || []).map(id => (
+                <button
+                  key={id}
+                  type="button"
+                  className="admin-tag"
+                  onClick={() => handleRemoveAdminChatId(id)}
+                >
+                  {id}
+                  <span>×</span>
+                </button>
+              ))}
+            </div>
+            {botStatus?.hasUpdates === false && (
+              <p className="admin-muted">Пока нет сообщений. Нажмите «Открыть бота» и отправьте /start.</p>
+            )}
+            <p className="admin-muted">
+              Можно добавить числовой Telegram ID или @username. Для @username пользователь должен отправить /start боту.
+            </p>
+            {syncResult && <p className="admin-muted">{syncResult}</p>}
+            {botError && <p className="admin-error">{botError}</p>}
           </section>
         )}
       </main>
