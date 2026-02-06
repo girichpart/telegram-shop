@@ -1198,26 +1198,41 @@ function App() {
                         onChange={e => setSettings({ ...settings, heroTextColor: e.target.value })}
                       />
                     </label>
-                    <label className="admin-toggle">
-                      <input
-                        type="checkbox"
-                        checked={settings.webAccessEnabled !== false}
-                        onChange={e => setSettings({ ...settings, webAccessEnabled: e.target.checked })}
-                      />
-                      <span>Доступ с сайта (web)</span>
-                    </label>
                     <div className="admin-grid">
                       <div className="admin-muted">
                         Статус: {settings.webAccessEnabled === false ? 'закрыт' : 'открыт'}
                       </div>
-                      <button
-                        type="button"
-                        className="admin-btn danger"
-                        onClick={handleWebLock}
-                        disabled={webLocking}
-                      >
-                        {webLocking ? 'Закрываю...' : 'Жёстко закрыть web'}
-                      </button>
+                      <div className="admin-actions">
+                        <button
+                          type="button"
+                          className="admin-btn ghost"
+                          onClick={async () => {
+                            setWebLocking(true);
+                            setWebLockMessage('');
+                            try {
+                              const res = await api.put('/api/settings', { webAccessEnabled: true });
+                              setSettings(prev => ({ ...prev, ...(res.data || {}) }));
+                              setWebLockMessage('Web доступ включен');
+                            } catch (err) {
+                              console.error(err);
+                              setWebLockMessage('Не удалось включить web доступ');
+                            } finally {
+                              setWebLocking(false);
+                            }
+                          }}
+                          disabled={webLocking}
+                        >
+                          Открыть web
+                        </button>
+                        <button
+                          type="button"
+                          className="admin-btn danger"
+                          onClick={handleWebLock}
+                          disabled={webLocking}
+                        >
+                          {webLocking ? 'Закрываю...' : 'Жёстко закрыть web'}
+                        </button>
+                      </div>
                       {webLockMessage && <div className="admin-muted">{webLockMessage}</div>}
                     </div>
                   </div>
