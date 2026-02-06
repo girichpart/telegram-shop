@@ -9,6 +9,10 @@ const buildDefaults = () => ({
   heroSubtitle: 'Новая коллекция / Systems',
   heroDescription: 'Городская экипировка, собранная как система.',
   heroVideoUrl: '/hero.mp4',
+  heroTextScale: 1,
+  heroTextColor: '#ffffff',
+  heroTextOpacity: 0.85,
+  webAccessEnabled: true,
   deliveryCdekEnabled: true,
   deliveryYandexEnabled: false,
   paymentYookassaEnabled: true,
@@ -42,11 +46,13 @@ router.put('/', adminAuth, async (req, res) => {
       'heroSubtitle',
       'heroDescription',
       'heroVideoUrl',
+      'heroTextColor',
       'paymentYookassaLabel',
       'paymentYookassaImageUrl',
       'telegramAdminChatId'
     ];
-    const allowedBooleanFields = ['deliveryCdekEnabled', 'deliveryYandexEnabled', 'paymentYookassaEnabled'];
+    const allowedBooleanFields = ['deliveryCdekEnabled', 'deliveryYandexEnabled', 'paymentYookassaEnabled', 'webAccessEnabled'];
+    const allowedNumberFields = ['heroTextScale', 'heroTextOpacity'];
     const allowedArrayFields = ['telegramAdminChatIds'];
     const payload = {};
     for (const key of allowedStringFields) {
@@ -58,6 +64,14 @@ router.put('/', adminAuth, async (req, res) => {
     for (const key of allowedBooleanFields) {
       if (typeof req.body[key] === 'boolean') {
         payload[key] = req.body[key];
+      }
+    }
+    for (const key of allowedNumberFields) {
+      if (req.body[key] !== undefined && req.body[key] !== null && req.body[key] !== '') {
+        const value = Number(req.body[key]);
+        if (!Number.isNaN(value)) {
+          payload[key] = value;
+        }
       }
     }
     for (const key of allowedArrayFields) {

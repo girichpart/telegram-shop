@@ -20,6 +20,10 @@ const emptySettings = {
   heroSubtitle: '',
   heroDescription: '',
   heroVideoUrl: '',
+  heroTextScale: 1,
+  heroTextColor: '#ffffff',
+  heroTextOpacity: 0.85,
+  webAccessEnabled: true,
   deliveryCdekEnabled: true,
   deliveryYandexEnabled: false,
   paymentYookassaEnabled: true,
@@ -1124,6 +1128,46 @@ function App() {
                       onChange={e => setSettings({ ...settings, heroVideoUrl: e.target.value })}
                       className="admin-input"
                     />
+                  </div>
+                  <div className="admin-grid two">
+                    <label className="admin-field">
+                      <span className="admin-muted">Размер текста ({Number(settings.heroTextScale || 1).toFixed(2)}x)</span>
+                      <input
+                        type="range"
+                        min="0.6"
+                        max="1.8"
+                        step="0.05"
+                        value={settings.heroTextScale ?? 1}
+                        onChange={e => setSettings({ ...settings, heroTextScale: Number(e.target.value) })}
+                      />
+                    </label>
+                    <label className="admin-field">
+                      <span className="admin-muted">Прозрачность текста ({Math.round((settings.heroTextOpacity ?? 0.85) * 100)}%)</span>
+                      <input
+                        type="range"
+                        min="0.2"
+                        max="1"
+                        step="0.05"
+                        value={settings.heroTextOpacity ?? 0.85}
+                        onChange={e => setSettings({ ...settings, heroTextOpacity: Number(e.target.value) })}
+                      />
+                    </label>
+                    <label className="admin-field">
+                      <span className="admin-muted">Цвет текста</span>
+                      <input
+                        type="color"
+                        value={settings.heroTextColor || '#ffffff'}
+                        onChange={e => setSettings({ ...settings, heroTextColor: e.target.value })}
+                      />
+                    </label>
+                    <label className="admin-toggle">
+                      <input
+                        type="checkbox"
+                        checked={settings.webAccessEnabled !== false}
+                        onChange={e => setSettings({ ...settings, webAccessEnabled: e.target.checked })}
+                      />
+                      <span>Доступ с сайта (web)</span>
+                    </label>
                   </div>
                 </div>
               )}

@@ -22,6 +22,9 @@ const Home = () => {
   const heroTitle = settings?.heroTitle ?? import.meta.env.VITE_HOME_MEDIA_TITLE ?? 'grått';
   const heroSubtitle = settings?.heroSubtitle ?? import.meta.env.VITE_HOME_MEDIA_SUBTITLE ?? 'Новая коллекция / Systems';
   const heroDescription = settings?.heroDescription ?? 'Городская экипировка, собранная как система.';
+  const heroTextScale = settings?.heroTextScale ?? 1;
+  const heroTextColor = settings?.heroTextColor ?? '#ffffff';
+  const heroTextOpacity = settings?.heroTextOpacity ?? 0.85;
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -219,11 +222,29 @@ const Home = () => {
           )}
           <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/30 to-black/70"></div>
         </div>
-        <div className="absolute inset-0 flex items-center justify-center px-6 text-center text-white">
-          <div className="max-w-[720px] pns-fade-up">
-            <p className="text-[11px] uppercase tracking-[0.3em] opacity-70">{heroSubtitle}</p>
-            <h1 className="heading-md mt-3">{heroTitle}</h1>
-            <p className="t-small mt-3 opacity-80">{heroDescription}</p>
+        <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
+          <div
+            className="max-w-[720px] pns-fade-up"
+            style={{ color: heroTextColor, opacity: heroTextOpacity }}
+          >
+            <p
+              className="uppercase tracking-[0.3em]"
+              style={{ fontSize: `${11 * heroTextScale}px` }}
+            >
+              {heroSubtitle}
+            </p>
+            <h1
+              className="mt-3"
+              style={{ fontSize: `${28 * heroTextScale}px`, lineHeight: 1.1, letterSpacing: '0.04em' }}
+            >
+              {heroTitle}
+            </h1>
+            <p
+              className="mt-3"
+              style={{ fontSize: `${12 * heroTextScale}px`, lineHeight: 1.4, letterSpacing: '0.04em' }}
+            >
+              {heroDescription}
+            </p>
             {settingsError && (
               <p className="mt-4 text-[11px] uppercase tracking-[0.2em] text-white/70">{settingsError}</p>
             )}

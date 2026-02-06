@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import api from './api';
 import Home from './pages/Home.jsx';
 import Products from './pages/Products.jsx';
 import Product from './pages/Product.jsx';
@@ -9,9 +10,12 @@ import Success from './pages/Success.jsx';
 import Info from './pages/Info.jsx';
 import Account from './pages/Account.jsx';
 import { CartProvider } from './context/CartContext.jsx';
+import WebGate from './components/WebGate.jsx';
 
 function App() {
   const [isTelegram, setIsTelegram] = useState(true);
+  const [settings, setSettings] = useState(null);
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
 
   useEffect(() => {
     if (window.Telegram?.WebApp) {
@@ -22,6 +26,26 @@ function App() {
       setIsTelegram(false);
     }
   }, []);
+
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const res = await api.get('/api/settings', { params: { ts: Date.now() } });
+        setSettings(res.data || null);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setSettingsLoaded(true);
+      }
+    };
+    loadSettings();
+  }, []);
+
+  const webAccessEnabled = settings?.webAccessEnabled !== false;
+
+  if (settingsLoaded && !isTelegram && !webAccessEnabled) {
+    return <WebGate settings={settings} />;
+  }
 
   return (
     <CartProvider>
