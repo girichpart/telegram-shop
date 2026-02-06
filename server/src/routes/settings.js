@@ -20,8 +20,12 @@ const buildDefaults = () => ({
 
 router.get('/', async (req, res) => {
   try {
-    const settings = await Settings.findOne({ key: 'main' }).lean();
-    res.set('Cache-Control', 'no-store');
+    const settings = await Settings.findOne({ key: 'main' })
+      .sort({ updatedAt: -1 })
+      .lean();
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
     res.json({
       ...buildDefaults(),
       ...(settings || {})
@@ -67,6 +71,10 @@ router.put('/', adminAuth, async (req, res) => {
       { $set: payload, $setOnInsert: { key: 'main' } },
       { new: true, upsert: true }
     ).lean();
+
+    if (updated?._id) {
+      await Settings.deleteMany({ key: 'main', _id: { $ne: updated._id } });
+    }
 
     res.json({
       ...buildDefaults(),
