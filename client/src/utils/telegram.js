@@ -36,3 +36,8 @@ export const isContactSuccess = (payload) => {
   if (!data.status) return true;
   return ['sent', 'ok', 'success'].includes(data.status);
 };
+
+export const getTelegramUser = () => {
+  if (typeof window === 'undefined') return null;
+  return window.Telegram?.WebApp?.initDataUnsafe?.user || null;
+};

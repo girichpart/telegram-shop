@@ -3,13 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import { useCart } from '../context/CartContext.jsx';
 import SiteShell from '../components/SiteShell.jsx';
-import { extractPhoneNumber, isContactSuccess } from '../utils/telegram.js';
+import { extractPhoneNumber, getTelegramUser, isContactSuccess } from '../utils/telegram.js';
 
 const Checkout = () => {
   const navigate = useNavigate();
   const { items, total, clear } = useCart();
 
-  const telegramUser = window.Telegram?.WebApp?.initDataUnsafe?.user || null;
+  const [telegramUser, setTelegramUser] = useState(() => getTelegramUser());
   const draft = useMemo(() => {
     if (typeof window === 'undefined') return {};
     try {
@@ -102,6 +102,11 @@ const Checkout = () => {
     }
   }, [enabledProviders, deliveryProvider]);
 
+  useEffect(() => {
+    if (!telegramUser?.id || !phone) return;
+    saveCustomer(phone);
+  }, [telegramUser?.id, phone]);
+
   const saveCustomer = async (phoneNumber) => {
     if (!telegramUser?.id || !phoneNumber) return;
     try {
@@ -129,6 +134,7 @@ const Checkout = () => {
         localStorage.setItem('tg_phone_verified', 'true');
         setPhone(nextPhone);
         setPhoneVerified(true);
+        await saveCustomer(nextPhone);
       }
       return nextPhone;
     } catch (err) {
@@ -166,6 +172,23 @@ const Checkout = () => {
       tg.offEvent?.('web_app_request_contact', handler);
     };
   }, []);
+
+  useEffect(() => {
+    if (telegramUser) return undefined;
+    let attempts = 0;
+    const interval = setInterval(() => {
+      const nextUser = getTelegramUser();
+      if (nextUser) {
+        setTelegramUser(nextUser);
+        clearInterval(interval);
+      }
+      attempts += 1;
+      if (attempts > 20) {
+        clearInterval(interval);
+      }
+    }, 500);
+    return () => clearInterval(interval);
+  }, [telegramUser]);
 
   const requestTelegramPhone = async () => {
     const tg = window.Telegram?.WebApp;

@@ -12,22 +12,31 @@ import Account from './pages/Account.jsx';
 import { CartProvider } from './context/CartContext.jsx';
 import WebGate from './components/WebGate.jsx';
 
+const detectTelegram = () => {
+  if (typeof window === 'undefined') return false;
+  const tg = window.Telegram?.WebApp;
+  if (!tg) return false;
+  if (tg.initData && tg.initData.length > 0) return true;
+  if (tg.initDataUnsafe?.user) return true;
+  const params = new URLSearchParams(window.location.search);
+  if (params.has('tgWebAppData') || params.has('tgWebAppVersion') || params.has('tgWebAppStartParam')) {
+    return true;
+  }
+  return false;
+};
+
 function App() {
-  const [isTelegram, setIsTelegram] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return Boolean(window.Telegram?.WebApp?.initData);
-  });
+  const [isTelegram, setIsTelegram] = useState(() => detectTelegram());
   const [settings, setSettings] = useState(null);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
 
   useEffect(() => {
-    if (window.Telegram?.WebApp) {
+    const inTelegram = detectTelegram();
+    if (inTelegram && window.Telegram?.WebApp) {
       window.Telegram.WebApp.ready();
       window.Telegram.WebApp.expand();
-      setIsTelegram(true);
-    } else {
-      setIsTelegram(false);
     }
+    setIsTelegram(inTelegram);
   }, []);
 
   useEffect(() => {
@@ -46,7 +55,7 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
-  const webAccessEnabled = settings?.webAccessEnabled !== false;
+  const webAccessEnabled = settings?.webAccessEnabled === true;
 
   if (settingsLoaded && !isTelegram && !webAccessEnabled) {
     return <WebGate settings={settings} />;

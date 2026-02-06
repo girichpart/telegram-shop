@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import api from './api';
+import api, { resolveBaseUrl } from './api';
 import './App.css';
 
 const emptyForm = {
@@ -650,7 +650,7 @@ function App() {
 
   const botUsername = botStatus?.bot?.username || '';
   const botLink = botUsername ? `https://t.me/${botUsername}` : '';
-  const apiBase = import.meta.env.VITE_API_BASE_URL || window.location.origin;
+  const apiBase = resolveBaseUrl();
   const heroPreviewUrl = settings.heroVideoUrl
     ? settings.heroVideoUrl.startsWith('http')
       ? settings.heroVideoUrl

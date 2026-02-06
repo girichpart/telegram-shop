@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import api from '../api';
 import SiteShell from '../components/SiteShell.jsx';
-import { extractPhoneNumber, isContactSuccess } from '../utils/telegram.js';
+import { extractPhoneNumber, getTelegramUser, isContactSuccess } from '../utils/telegram.js';
 
 const Account = () => {
-  const telegramUser = window.Telegram?.WebApp?.initDataUnsafe?.user || null;
+  const [telegramUser, setTelegramUser] = useState(() => getTelegramUser());
   const [phone, setPhone] = useState(() => localStorage.getItem('tg_phone') || '');
   const [phoneVerified, setPhoneVerified] = useState(() => localStorage.getItem('tg_phone_verified') === 'true');
   const [orders, setOrders] = useState([]);
@@ -39,6 +39,7 @@ const Account = () => {
         localStorage.setItem('tg_phone_verified', 'true');
         setPhone(nextPhone);
         setPhoneVerified(true);
+        await saveCustomer(nextPhone);
       }
       return nextPhone;
     } catch (err) {
@@ -116,8 +117,30 @@ const Account = () => {
   }, [telegramUser?.id, loadOrders]);
 
   useEffect(() => {
+    if (telegramUser) return undefined;
+    let attempts = 0;
+    const interval = setInterval(() => {
+      const nextUser = getTelegramUser();
+      if (nextUser) {
+        setTelegramUser(nextUser);
+        clearInterval(interval);
+      }
+      attempts += 1;
+      if (attempts > 20) {
+        clearInterval(interval);
+      }
+    }, 500);
+    return () => clearInterval(interval);
+  }, [telegramUser]);
+
+  useEffect(() => {
     if (!telegramUser?.id || phone) return;
     syncTelegramContact();
+  }, [telegramUser?.id, phone]);
+
+  useEffect(() => {
+    if (!telegramUser?.id || !phone) return;
+    saveCustomer(phone);
   }, [telegramUser?.id, phone]);
 
   useEffect(() => {
