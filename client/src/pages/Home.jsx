@@ -19,9 +19,9 @@ const Home = () => {
   const heroRef = useRef(null);
   const heroType = import.meta.env.VITE_HOME_MEDIA_TYPE || 'image';
   const heroUrl = import.meta.env.VITE_HOME_MEDIA_URL;
-  const heroTitle = settings?.heroTitle || import.meta.env.VITE_HOME_MEDIA_TITLE || 'grått';
-  const heroSubtitle = settings?.heroSubtitle || import.meta.env.VITE_HOME_MEDIA_SUBTITLE || 'Новая коллекция / Systems';
-  const heroDescription = settings?.heroDescription || 'Городская экипировка, собранная как система.';
+  const heroTitle = settings?.heroTitle ?? import.meta.env.VITE_HOME_MEDIA_TITLE ?? 'grått';
+  const heroSubtitle = settings?.heroSubtitle ?? import.meta.env.VITE_HOME_MEDIA_SUBTITLE ?? 'Новая коллекция / Systems';
+  const heroDescription = settings?.heroDescription ?? 'Городская экипировка, собранная как система.';
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -77,7 +77,7 @@ const Home = () => {
   }, [loadSettings]);
 
   const defaultVideo = typeof window !== 'undefined' ? `${window.location.origin}/hero.mp4` : '/hero.mp4';
-  const heroMedia = settings?.heroVideoUrl || heroUrl || defaultVideo || products?.[0]?.images?.[0];
+  const heroMedia = settings?.heroVideoUrl ?? heroUrl ?? defaultVideo ?? products?.[0]?.images?.[0];
   const heroIsVideoFile = typeof heroMedia === 'string' && /\.(mp4|mov|webm)$/i.test(heroMedia);
   const resolvedHeroType = heroIsVideoFile ? 'video' : heroType;
   const heroIsMov = typeof heroMedia === 'string' && heroMedia.toLowerCase().endsWith('.mov');
