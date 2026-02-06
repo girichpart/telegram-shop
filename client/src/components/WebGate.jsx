@@ -27,7 +27,10 @@ const WebGate = ({ settings }) => {
   const telegramUrl = botUsername ? `https://t.me/${botUsername}` : '';
 
   return (
-    <div className="relative min-h-[100svh] w-full bg-black text-white">
+    <div
+      className="relative min-h-screen w-full overflow-hidden bg-black text-white"
+      style={{ minHeight: '100svh' }}
+    >
       <div className="absolute inset-0">
         {heroIsVideo && !videoError ? (
           <video
@@ -49,7 +52,10 @@ const WebGate = ({ settings }) => {
         )}
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/40 to-black/70" />
       </div>
-      <div className="relative z-10 flex min-h-[100svh] flex-col items-center justify-center px-6 text-center">
+      <div
+        className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6 text-center"
+        style={{ minHeight: '100svh' }}
+      >
         <div className="max-w-[520px]">
           <p className="text-[11px] uppercase tracking-[0.3em] opacity-70">
             Доступно только в Telegram
