@@ -78,6 +78,13 @@ function App() {
   const [statusInput, setStatusInput] = useState('');
   const [adminChatInput, setAdminChatInput] = useState('');
 
+  const normalizeNumber = (value, fallback) => {
+    if (value === '' || value === null || value === undefined) return fallback;
+    const parsed = Number(String(value).replace(',', '.'));
+    if (Number.isNaN(parsed)) return fallback;
+    return parsed;
+  };
+
   const fetchProducts = async () => {
     setLoading(true);
     try {
@@ -169,7 +176,12 @@ function App() {
     setSettingsSaving(true);
     setSettingsError('');
     try {
-      const res = await api.put('/api/settings', settings);
+      const payload = {
+        ...settings,
+        heroTextScale: normalizeNumber(settings.heroTextScale, 1),
+        heroTextOpacity: normalizeNumber(settings.heroTextOpacity, 0.85)
+      };
+      const res = await api.put('/api/settings', payload);
       setSettings({ ...emptySettings, ...(res.data || {}) });
     } catch (err) {
       console.error(err);
@@ -1142,24 +1154,22 @@ function App() {
                     <label className="admin-field">
                       <span className="admin-muted">Размер текста (x)</span>
                       <input
-                        type="number"
-                        min="0.6"
-                        max="1.8"
-                        step="0.05"
-                        value={settings.heroTextScale ?? 1}
-                        onChange={e => setSettings({ ...settings, heroTextScale: Number(e.target.value) })}
+                        type="text"
+                        inputMode="decimal"
+                        placeholder="Например: 1.2"
+                        value={settings.heroTextScale ?? ''}
+                        onChange={e => setSettings({ ...settings, heroTextScale: e.target.value })}
                         className="admin-input"
                       />
                     </label>
                     <label className="admin-field">
                       <span className="admin-muted">Прозрачность (0–1)</span>
                       <input
-                        type="number"
-                        min="0.2"
-                        max="1"
-                        step="0.05"
-                        value={settings.heroTextOpacity ?? 0.85}
-                        onChange={e => setSettings({ ...settings, heroTextOpacity: Number(e.target.value) })}
+                        type="text"
+                        inputMode="decimal"
+                        placeholder="Например: 0.85"
+                        value={settings.heroTextOpacity ?? ''}
+                        onChange={e => setSettings({ ...settings, heroTextOpacity: e.target.value })}
                         className="admin-input"
                       />
                     </label>
