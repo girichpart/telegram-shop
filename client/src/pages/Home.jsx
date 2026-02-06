@@ -17,9 +17,6 @@ const Home = () => {
   const [settingsError, setSettingsError] = useState('');
   const videoRef = useRef(null);
   const heroRef = useRef(null);
-  const previewMode = typeof window !== 'undefined'
-    ? new URLSearchParams(window.location.search).get('preview') === '1'
-    : false;
   const heroType = import.meta.env.VITE_HOME_MEDIA_TYPE || 'image';
   const heroUrl = import.meta.env.VITE_HOME_MEDIA_URL;
   const heroTitle = settings?.heroTitle ?? import.meta.env.VITE_HOME_MEDIA_TITLE ?? 'grått';
@@ -56,7 +53,7 @@ const Home = () => {
   const loadSettings = useCallback(async () => {
     try {
       const res = await api.get('/api/settings', {
-        params: { ts: Date.now(), mode: previewMode ? 'draft' : 'main' }
+        params: { ts: Date.now() }
       });
       setSettings(res.data || null);
       setSettingsError('');

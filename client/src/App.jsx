@@ -13,12 +13,12 @@ import { CartProvider } from './context/CartContext.jsx';
 import WebGate from './components/WebGate.jsx';
 
 function App() {
-  const [isTelegram, setIsTelegram] = useState(true);
+  const [isTelegram, setIsTelegram] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return Boolean(window.Telegram?.WebApp?.initData);
+  });
   const [settings, setSettings] = useState(null);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
-  const isPreview = typeof window !== 'undefined'
-    ? new URLSearchParams(window.location.search).get('preview') === '1'
-    : false;
 
   useEffect(() => {
     if (window.Telegram?.WebApp) {
@@ -33,7 +33,7 @@ function App() {
   useEffect(() => {
     const loadSettings = async () => {
       try {
-        const res = await api.get('/api/settings', { params: { ts: Date.now(), mode: 'main' } });
+        const res = await api.get('/api/settings', { params: { ts: Date.now() } });
         setSettings(res.data || null);
       } catch (err) {
         console.error(err);
@@ -48,7 +48,7 @@ function App() {
 
   const webAccessEnabled = settings?.webAccessEnabled !== false;
 
-  if (settingsLoaded && !isTelegram && !webAccessEnabled && !isPreview) {
+  if (settingsLoaded && !isTelegram && !webAccessEnabled) {
     return <WebGate settings={settings} />;
   }
 

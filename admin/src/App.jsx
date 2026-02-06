@@ -119,7 +119,7 @@ function App() {
     setSettingsLoading(true);
     setSettingsError('');
     try {
-      const res = await api.get('/api/settings', { params: { mode: 'draft' } });
+      const res = await api.get('/api/settings');
       const next = { ...emptySettings, ...(res.data || {}) };
       const list = Array.isArray(next.telegramAdminChatIds) ? next.telegramAdminChatIds : [];
       if (next.telegramAdminChatId && !list.includes(next.telegramAdminChatId)) {
@@ -169,25 +169,11 @@ function App() {
     setSettingsSaving(true);
     setSettingsError('');
     try {
-      const res = await api.put('/api/settings', settings, { params: { mode: 'draft' } });
+      const res = await api.put('/api/settings', settings);
       setSettings({ ...emptySettings, ...(res.data || {}) });
     } catch (err) {
       console.error(err);
       setSettingsError('Не удалось сохранить настройки');
-    } finally {
-      setSettingsSaving(false);
-    }
-  };
-
-  const handleSettingsPublish = async () => {
-    setSettingsSaving(true);
-    setSettingsError('');
-    try {
-      const res = await api.post('/api/settings/publish');
-      setSettings(prev => ({ ...prev, ...(res.data || {}) }));
-    } catch (err) {
-      console.error(err);
-      setSettingsError('Не удалось опубликовать настройки');
     } finally {
       setSettingsSaving(false);
     }
@@ -1102,26 +1088,11 @@ function App() {
                 <div className="admin-actions">
                   <button
                     type="button"
-                    className="admin-btn ghost"
-                    onClick={() => window.open('/?preview=1', '_blank')}
-                  >
-                    Предпросмотр
-                  </button>
-                  <button
-                    type="button"
-                    className="admin-btn"
+                    className="admin-btn primary"
                     onClick={handleSettingsSave}
                     disabled={settingsSaving || settingsLoading}
                   >
-                    Сохранить черновик
-                  </button>
-                  <button
-                    type="button"
-                    className="admin-btn primary"
-                    onClick={handleSettingsPublish}
-                    disabled={settingsSaving || settingsLoading}
-                  >
-                    Опубликовать
+                    Сохранить настройки
                   </button>
                 </div>
               </div>
@@ -1217,9 +1188,6 @@ function App() {
                 </div>
               )}
               {settingsError && <p className="admin-error">{settingsError}</p>}
-              <p className="admin-muted">
-                Черновик виден только в предпросмотре. Для публикации нажмите «Опубликовать».
-              </p>
             </section>
 
             
