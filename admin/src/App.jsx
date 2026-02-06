@@ -160,15 +160,15 @@ function App() {
     }
   };
 
-  const updateOrderStatus = async (orderId, payload) => {
+  const refundOrder = async (orderId) => {
     if (!orderId) return;
     setOrderSavingId(orderId);
     try {
-      await api.patch(`/api/orders/${orderId}/status`, payload);
+      await api.post(`/api/orders/${orderId}/refund`);
       await fetchOrders();
     } catch (err) {
       console.error(err);
-      setOrdersError('Не удалось обновить заказ');
+      setOrdersError('Не удалось выполнить возврат');
     } finally {
       setOrderSavingId('');
     }
@@ -1089,18 +1089,15 @@ function App() {
                   <div>
                     <p className="admin-card-price">{Number(order.totalAmount || 0).toLocaleString('ru-RU')} ₽</p>
                     <div className="admin-order-actions">
-                      <select
-                        className="admin-input"
-                        value={order.status || 'new'}
-                        onChange={e => updateOrderStatus(order._id, { status: e.target.value })}
-                        disabled={orderSavingId === order._id}
+                      <div className="admin-muted">Статус: {order.status || 'new'}</div>
+                      <button
+                        type="button"
+                        className="admin-btn danger"
+                        onClick={() => refundOrder(order._id)}
+                        disabled={orderSavingId === order._id || order.status === 'canceled'}
                       >
-                        {orderStatuses.map(status => (
-                          <option key={status.value} value={status.value}>
-                            {status.label}
-                          </option>
-                        ))}
-                      </select>
+                        {orderSavingId === order._id ? 'Выполняю...' : 'Оформить возврат'}
+                      </button>
                     </div>
                   </div>
                 </div>

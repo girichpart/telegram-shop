@@ -83,6 +83,11 @@ router.post('/', async (req, res) => {
     const deliveryProvider = delivery?.provider || 'cdek';
     const deliveryType = delivery?.type || 'pvz';
 
+    const trackingPrefix = process.env.CDEK_TRACKING_PREFIX || '';
+    const initialTracking = trackingPrefix && deliveryProvider === 'cdek'
+      ? `${trackingPrefix}${Date.now().toString(36).toUpperCase()}`
+      : '';
+
     const order = await Order.create({
       phone,
       email,
@@ -107,7 +112,8 @@ router.post('/', async (req, res) => {
         city: delivery?.city || '',
         pvz: delivery?.pvz || '',
         cost: delivery?.cost || 0,
-        status: 'created'
+        status: 'created',
+        trackingNumber: initialTracking || ''
       }
     });
 
@@ -138,7 +144,9 @@ router.post('/', async (req, res) => {
       console.error('Customer upsert error:', err.message);
     }
 
-    await notifyOrder(order, 'created');
+    await notifyOrder(order, 'created', {
+      trackingNumber: order.delivery?.trackingNumber || ''
+    });
     res.json(order);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -192,6 +200,29 @@ router.patch('/:id/status', adminAuth, async (req, res) => {
       deliveryStatus: deliveryStatus || order.delivery?.status
     });
 
+    res.json(order);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/:id/refund', adminAuth, async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ error: 'Заказ не найден' });
+
+    order.status = 'canceled';
+    order.paymentStatus = 'refunded';
+    if (order.payment) {
+      order.payment.status = 'refunded';
+    }
+    if (order.delivery) {
+      order.delivery.status = 'canceled';
+      order.delivery.updatedAt = new Date();
+    }
+
+    await order.save();
+    await notifyOrder(order, 'canceled');
     res.json(order);
   } catch (err) {
     res.status(500).json({ error: err.message });

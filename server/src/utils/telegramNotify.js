@@ -197,8 +197,9 @@ const notifyOrder = async (order, type, extra = {}) => {
     lines.push('', itemsBlock);
   }
 
-  if (extra.trackingNumber) {
-    lines.push('', `Трек-номер: ${extra.trackingNumber}`);
+  const trackingToSend = extra.trackingNumber || order.delivery?.trackingNumber;
+  if (trackingToSend) {
+    lines.push('', `Трек-номер: ${trackingToSend}`);
   }
 
   if (extra.paymentId) {
@@ -226,8 +227,8 @@ const notifyOrder = async (order, type, extra = {}) => {
     if (itemsBlock) {
       adminLines.push('', itemsBlock);
     }
-    if (extra.trackingNumber) {
-      adminLines.push('', `Трек-номер: ${extra.trackingNumber}`);
+    if (trackingToSend) {
+      adminLines.push('', `Трек-номер: ${trackingToSend}`);
     }
     await Promise.all(
       adminChatIds.map(id => sendMessage(id, adminLines.join('\n')))
