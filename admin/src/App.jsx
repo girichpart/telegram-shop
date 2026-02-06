@@ -77,6 +77,8 @@ function App() {
   const [syncResult, setSyncResult] = useState('');
   const [statusInput, setStatusInput] = useState('');
   const [adminChatInput, setAdminChatInput] = useState('');
+  const [webLocking, setWebLocking] = useState(false);
+  const [webLockMessage, setWebLockMessage] = useState('');
 
   const normalizeNumber = (value, fallback) => {
     if (value === '' || value === null || value === undefined) return fallback;
@@ -188,6 +190,21 @@ function App() {
       setSettingsError('Не удалось сохранить настройки');
     } finally {
       setSettingsSaving(false);
+    }
+  };
+
+  const handleWebLock = async () => {
+    setWebLocking(true);
+    setWebLockMessage('');
+    try {
+      const res = await api.put('/api/settings', { webAccessEnabled: false });
+      setSettings(prev => ({ ...prev, ...(res.data || {}) }));
+      setWebLockMessage('Web доступ выключен');
+    } catch (err) {
+      console.error(err);
+      setWebLockMessage('Не удалось выключить web доступ');
+    } finally {
+      setWebLocking(false);
     }
   };
 
@@ -1189,6 +1206,20 @@ function App() {
                       />
                       <span>Доступ с сайта (web)</span>
                     </label>
+                    <div className="admin-grid">
+                      <div className="admin-muted">
+                        Статус: {settings.webAccessEnabled === false ? 'закрыт' : 'открыт'}
+                      </div>
+                      <button
+                        type="button"
+                        className="admin-btn danger"
+                        onClick={handleWebLock}
+                        disabled={webLocking}
+                      >
+                        {webLocking ? 'Закрываю...' : 'Жёстко закрыть web'}
+                      </button>
+                      {webLockMessage && <div className="admin-muted">{webLockMessage}</div>}
+                    </div>
                   </div>
                 </div>
               )}
