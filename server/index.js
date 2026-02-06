@@ -47,6 +47,7 @@ app.use('/api/delivery', require('./src/routes/delivery'));
 app.use('/api/track', require('./src/routes/track'));
 app.use('/api/settings', require('./src/routes/settings'));
 app.use('/api/customers', require('./src/routes/customers'));
+app.use('/api/telegram', require('./src/routes/telegram'));
 
 const devProxyEnabled = process.env.DEV_PROXY === 'true';
 const clientDevUrl = process.env.CLIENT_DEV_URL || 'http://localhost:5173';

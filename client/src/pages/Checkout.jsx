@@ -119,6 +119,24 @@ const Checkout = () => {
     }
   };
 
+  const syncTelegramContact = async () => {
+    if (!telegramUser?.id) return '';
+    try {
+      const res = await api.post('/api/telegram/contact', { telegramId: telegramUser.id });
+      const nextPhone = res.data?.phone || '';
+      if (nextPhone) {
+        localStorage.setItem('tg_phone', nextPhone);
+        localStorage.setItem('tg_phone_verified', 'true');
+        setPhone(nextPhone);
+        setPhoneVerified(true);
+      }
+      return nextPhone;
+    } catch (err) {
+      console.error(err);
+      return '';
+    }
+  };
+
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
     if (!tg?.onEvent) return undefined;
@@ -134,6 +152,8 @@ const Checkout = () => {
         setPhone(phoneNumber);
         setPhoneVerified(true);
         saveCustomer(phoneNumber);
+      } else {
+        syncTelegramContact();
       }
     };
 
@@ -164,6 +184,8 @@ const Checkout = () => {
           setPhone(phoneNumber);
           setPhoneVerified(true);
           saveCustomer(phoneNumber);
+        } else {
+          syncTelegramContact();
         }
       }
     } catch (err) {

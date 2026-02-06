@@ -29,6 +29,24 @@ const Account = () => {
     }
   };
 
+  const syncTelegramContact = async () => {
+    if (!telegramUser?.id) return '';
+    try {
+      const res = await api.post('/api/telegram/contact', { telegramId: telegramUser.id });
+      const nextPhone = res.data?.phone || '';
+      if (nextPhone) {
+        localStorage.setItem('tg_phone', nextPhone);
+        localStorage.setItem('tg_phone_verified', 'true');
+        setPhone(nextPhone);
+        setPhoneVerified(true);
+      }
+      return nextPhone;
+    } catch (err) {
+      console.error(err);
+      return '';
+    }
+  };
+
   const loadOrders = useCallback(async (payload) => {
     setLoading(true);
     setError('');
@@ -63,6 +81,11 @@ const Account = () => {
           if (telegramUser?.id) {
             loadOrders({ telegramId: telegramUser.id });
           }
+        } else {
+          const synced = await syncTelegramContact();
+          if (synced && telegramUser?.id) {
+            loadOrders({ telegramId: telegramUser.id });
+          }
         }
       }
     } catch (err) {
@@ -91,6 +114,11 @@ const Account = () => {
       loadOrders({ telegramId: telegramUser.id });
     }
   }, [telegramUser?.id, loadOrders]);
+
+  useEffect(() => {
+    if (!telegramUser?.id || phone) return;
+    syncTelegramContact();
+  }, [telegramUser?.id, phone]);
 
   useEffect(() => {
     if (!telegramUser?.id) return undefined;
@@ -129,6 +157,8 @@ const Account = () => {
         if (telegramUser?.id) {
           loadOrders({ telegramId: telegramUser.id });
         }
+      } else {
+        syncTelegramContact();
       }
     };
     tg.onEvent('contactRequested', handler);
