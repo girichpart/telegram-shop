@@ -30,7 +30,10 @@ const Footer = () => {
             </div>
           </div>
         </div>
-        <p className="mt-10 text-[10px] uppercase tracking-[0.28em] opacity-40">
+        <p
+          className="mt-10 text-[10px] normal-case tracking-[0.28em] opacity-40"
+          style={{ textTransform: 'none' }}
+        >
           grått · тестовая витрина
         </p>
       </div>

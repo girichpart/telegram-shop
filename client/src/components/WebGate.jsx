@@ -60,7 +60,7 @@ const WebGate = ({ settings }) => {
           <p className="text-[11px] uppercase tracking-[0.3em] opacity-70">
             Доступно только в Telegram
           </p>
-          <h1 className="mt-4 text-[22px] uppercase tracking-[0.2em]">
+          <h1 className="mt-4 text-[22px] tracking-[0.2em]">
             {settings?.heroTitle || 'grått'}
           </h1>
           {telegramUrl ? (
