@@ -72,11 +72,23 @@ router.put('/', adminAuth, async (req, res) => {
         payload[key] = req.body[key];
       }
     }
+    const clamp = (value, min, max, fallback) => {
+      if (Number.isNaN(value)) return fallback;
+      if (value < min) return min;
+      if (value > max) return max;
+      return value;
+    };
     for (const key of allowedNumberFields) {
       if (req.body[key] !== undefined && req.body[key] !== null && req.body[key] !== '') {
         const value = Number(req.body[key]);
         if (!Number.isNaN(value)) {
-          payload[key] = value;
+          if (key === 'heroTextScale') {
+            payload[key] = clamp(value, 0.5, 3, 1);
+          } else if (key === 'heroTextOpacity') {
+            payload[key] = clamp(value, 0.1, 1, 0.85);
+          } else {
+            payload[key] = value;
+          }
         }
       }
     }

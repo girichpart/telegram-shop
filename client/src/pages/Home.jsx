@@ -24,7 +24,8 @@ const Home = () => {
   const heroDescription = settings?.heroDescription ?? 'Городская экипировка, собранная как система.';
   const heroTextScale = settings?.heroTextScale ?? 1;
   const heroTextColor = settings?.heroTextColor ?? '#ffffff';
-  const heroTextOpacity = settings?.heroTextOpacity ?? 0.85;
+  const heroTextOpacityRaw = settings?.heroTextOpacity ?? 0.85;
+  const heroTextOpacity = Math.max(0.1, Math.min(1, Number(heroTextOpacityRaw) || 0.85));
 
   useEffect(() => {
     const loadProducts = async () => {
