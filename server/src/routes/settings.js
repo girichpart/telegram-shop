@@ -24,15 +24,20 @@ const buildDefaults = () => ({
 
 router.get('/', async (req, res) => {
   try {
-    const settings = await Settings.findOne({ key: 'main' })
+    const mode = req.query.mode === 'draft' ? 'draft' : 'main';
+    let settings = await Settings.findOne({ key: mode })
       .sort({ updatedAt: -1 })
       .lean();
+    if (!settings && mode === 'draft') {
+      settings = await Settings.findOne({ key: 'main' }).sort({ updatedAt: -1 }).lean();
+    }
     res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     res.set('Pragma', 'no-cache');
     res.set('Expires', '0');
     res.json({
       ...buildDefaults(),
-      ...(settings || {})
+      ...(settings || {}),
+      mode
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -41,6 +46,7 @@ router.get('/', async (req, res) => {
 
 router.put('/', adminAuth, async (req, res) => {
   try {
+    const mode = req.query.mode === 'draft' ? 'draft' : 'main';
     const allowedStringFields = [
       'heroTitle',
       'heroSubtitle',
@@ -81,18 +87,44 @@ router.put('/', adminAuth, async (req, res) => {
     }
 
     const updated = await Settings.findOneAndUpdate(
-      { key: 'main' },
-      { $set: payload, $setOnInsert: { key: 'main' } },
+      { key: mode },
+      { $set: payload, $setOnInsert: { key: mode } },
       { new: true, upsert: true }
     ).lean();
 
     if (updated?._id) {
-      await Settings.deleteMany({ key: 'main', _id: { $ne: updated._id } });
+      await Settings.deleteMany({ key: mode, _id: { $ne: updated._id } });
     }
 
     res.json({
       ...buildDefaults(),
-      ...(updated || {})
+      ...(updated || {}),
+      mode
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/publish', adminAuth, async (req, res) => {
+  try {
+    const draft = await Settings.findOne({ key: 'draft' }).lean();
+    if (!draft) {
+      return res.status(404).json({ error: 'Черновик не найден' });
+    }
+    const { _id, key, createdAt, updatedAt, __v, ...payload } = draft;
+    const published = await Settings.findOneAndUpdate(
+      { key: 'main' },
+      { $set: payload, $setOnInsert: { key: 'main' } },
+      { new: true, upsert: true }
+    ).lean();
+    if (published?._id) {
+      await Settings.deleteMany({ key: 'main', _id: { $ne: published._id } });
+    }
+    res.json({
+      ...buildDefaults(),
+      ...(published || {}),
+      mode: 'main'
     });
   } catch (err) {
     res.status(500).json({ error: err.message });

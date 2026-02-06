@@ -17,6 +17,9 @@ const Home = () => {
   const [settingsError, setSettingsError] = useState('');
   const videoRef = useRef(null);
   const heroRef = useRef(null);
+  const previewMode = typeof window !== 'undefined'
+    ? new URLSearchParams(window.location.search).get('preview') === '1'
+    : false;
   const heroType = import.meta.env.VITE_HOME_MEDIA_TYPE || 'image';
   const heroUrl = import.meta.env.VITE_HOME_MEDIA_URL;
   const heroTitle = settings?.heroTitle ?? import.meta.env.VITE_HOME_MEDIA_TITLE ?? 'grått';
@@ -52,7 +55,9 @@ const Home = () => {
 
   const loadSettings = useCallback(async () => {
     try {
-      const res = await api.get('/api/settings', { params: { ts: Date.now() } });
+      const res = await api.get('/api/settings', {
+        params: { ts: Date.now(), mode: previewMode ? 'draft' : 'main' }
+      });
       setSettings(res.data || null);
       setSettingsError('');
     } catch (err) {
@@ -225,23 +230,33 @@ const Home = () => {
         <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
           <div
             className="max-w-[720px] pns-fade-up"
-            style={{ color: heroTextColor, opacity: heroTextOpacity }}
+            style={{ color: heroTextColor }}
           >
             <p
               className="uppercase tracking-[0.3em]"
-              style={{ fontSize: `${11 * heroTextScale}px` }}
+              style={{ fontSize: `${11 * heroTextScale}px`, opacity: heroTextOpacity }}
             >
               {heroSubtitle}
             </p>
             <h1
               className="mt-3"
-              style={{ fontSize: `${28 * heroTextScale}px`, lineHeight: 1.1, letterSpacing: '0.04em' }}
+              style={{
+                fontSize: `${28 * heroTextScale}px`,
+                lineHeight: 1.1,
+                letterSpacing: '0.04em',
+                opacity: heroTextOpacity
+              }}
             >
               {heroTitle}
             </h1>
             <p
               className="mt-3"
-              style={{ fontSize: `${12 * heroTextScale}px`, lineHeight: 1.4, letterSpacing: '0.04em' }}
+              style={{
+                fontSize: `${12 * heroTextScale}px`,
+                lineHeight: 1.4,
+                letterSpacing: '0.04em',
+                opacity: heroTextOpacity
+              }}
             >
               {heroDescription}
             </p>

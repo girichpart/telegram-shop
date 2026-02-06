@@ -24,11 +24,7 @@ const WebGate = ({ settings }) => {
     videoRef.current.play().catch(() => undefined);
   }, [heroIsVideo, heroSrc]);
 
-  const openTelegram = () => {
-    if (!botUsername) return;
-    const url = `https://t.me/${botUsername}`;
-    window.location.href = url;
-  };
+  const telegramUrl = botUsername ? `https://t.me/${botUsername}` : '';
 
   return (
     <div className="relative min-h-[100svh] w-full bg-black text-white">
@@ -59,17 +55,26 @@ const WebGate = ({ settings }) => {
             Доступно только в Telegram
           </p>
           <h1 className="mt-4 text-[22px] uppercase tracking-[0.2em]">Открыть магазин</h1>
-          <button
-            type="button"
-            onClick={openTelegram}
-            className="mt-8 inline-flex items-center justify-center rounded-full border border-white/40 bg-white/5 px-8 py-3 text-[11px] uppercase tracking-[0.3em] transition hover:bg-white/15"
-          >
-            Перейти в Telegram
-          </button>
-          {!botUsername && (
-            <p className="mt-4 text-[11px] uppercase tracking-[0.2em] opacity-60">
-              Укажи VITE_TELEGRAM_BOT_USERNAME в env
-            </p>
+          {telegramUrl ? (
+            <a
+              href={telegramUrl}
+              className="mt-8 inline-flex items-center justify-center rounded-full border border-white/40 bg-white/5 px-8 py-3 text-[11px] uppercase tracking-[0.3em] transition hover:bg-white/15"
+            >
+              Перейти в Telegram
+            </a>
+          ) : (
+            <>
+              <button
+                type="button"
+                className="mt-8 inline-flex cursor-not-allowed items-center justify-center rounded-full border border-white/30 bg-white/5 px-8 py-3 text-[11px] uppercase tracking-[0.3em] opacity-60"
+                disabled
+              >
+                Перейти в Telegram
+              </button>
+              <p className="mt-4 text-[11px] uppercase tracking-[0.2em] opacity-60">
+                Укажи VITE_TELEGRAM_BOT_USERNAME в env
+              </p>
+            </>
           )}
         </div>
       </div>

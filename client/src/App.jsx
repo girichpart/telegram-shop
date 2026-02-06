@@ -16,6 +16,9 @@ function App() {
   const [isTelegram, setIsTelegram] = useState(true);
   const [settings, setSettings] = useState(null);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
+  const isPreview = typeof window !== 'undefined'
+    ? new URLSearchParams(window.location.search).get('preview') === '1'
+    : false;
 
   useEffect(() => {
     if (window.Telegram?.WebApp) {
@@ -30,7 +33,7 @@ function App() {
   useEffect(() => {
     const loadSettings = async () => {
       try {
-        const res = await api.get('/api/settings', { params: { ts: Date.now() } });
+        const res = await api.get('/api/settings', { params: { ts: Date.now(), mode: 'main' } });
         setSettings(res.data || null);
       } catch (err) {
         console.error(err);
@@ -39,11 +42,13 @@ function App() {
       }
     };
     loadSettings();
+    const interval = setInterval(loadSettings, 20000);
+    return () => clearInterval(interval);
   }, []);
 
   const webAccessEnabled = settings?.webAccessEnabled !== false;
 
-  if (settingsLoaded && !isTelegram && !webAccessEnabled) {
+  if (settingsLoaded && !isTelegram && !webAccessEnabled && !isPreview) {
     return <WebGate settings={settings} />;
   }
 

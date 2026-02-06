@@ -119,7 +119,7 @@ function App() {
     setSettingsLoading(true);
     setSettingsError('');
     try {
-      const res = await api.get('/api/settings');
+      const res = await api.get('/api/settings', { params: { mode: 'draft' } });
       const next = { ...emptySettings, ...(res.data || {}) };
       const list = Array.isArray(next.telegramAdminChatIds) ? next.telegramAdminChatIds : [];
       if (next.telegramAdminChatId && !list.includes(next.telegramAdminChatId)) {
@@ -169,11 +169,25 @@ function App() {
     setSettingsSaving(true);
     setSettingsError('');
     try {
-      const res = await api.put('/api/settings', settings);
+      const res = await api.put('/api/settings', settings, { params: { mode: 'draft' } });
       setSettings({ ...emptySettings, ...(res.data || {}) });
     } catch (err) {
       console.error(err);
       setSettingsError('Не удалось сохранить настройки');
+    } finally {
+      setSettingsSaving(false);
+    }
+  };
+
+  const handleSettingsPublish = async () => {
+    setSettingsSaving(true);
+    setSettingsError('');
+    try {
+      const res = await api.post('/api/settings/publish');
+      setSettings(prev => ({ ...prev, ...(res.data || {}) }));
+    } catch (err) {
+      console.error(err);
+      setSettingsError('Не удалось опубликовать настройки');
     } finally {
       setSettingsSaving(false);
     }
@@ -1085,7 +1099,31 @@ function App() {
             <section className="admin-panel">
               <div className="admin-panel-head">
                 <h2>Главная страница</h2>
-                <p className="admin-muted">Видео и текст</p>
+                <div className="admin-actions">
+                  <button
+                    type="button"
+                    className="admin-btn ghost"
+                    onClick={() => window.open('/?preview=1', '_blank')}
+                  >
+                    Предпросмотр
+                  </button>
+                  <button
+                    type="button"
+                    className="admin-btn"
+                    onClick={handleSettingsSave}
+                    disabled={settingsSaving || settingsLoading}
+                  >
+                    Сохранить черновик
+                  </button>
+                  <button
+                    type="button"
+                    className="admin-btn primary"
+                    onClick={handleSettingsPublish}
+                    disabled={settingsSaving || settingsLoading}
+                  >
+                    Опубликовать
+                  </button>
+                </div>
               </div>
               {settingsLoading ? (
                 <p className="admin-muted">Загрузка...</p>
@@ -1131,25 +1169,27 @@ function App() {
                   </div>
                   <div className="admin-grid two">
                     <label className="admin-field">
-                      <span className="admin-muted">Размер текста ({Number(settings.heroTextScale || 1).toFixed(2)}x)</span>
+                      <span className="admin-muted">Размер текста (x)</span>
                       <input
-                        type="range"
+                        type="number"
                         min="0.6"
                         max="1.8"
                         step="0.05"
                         value={settings.heroTextScale ?? 1}
                         onChange={e => setSettings({ ...settings, heroTextScale: Number(e.target.value) })}
+                        className="admin-input"
                       />
                     </label>
                     <label className="admin-field">
-                      <span className="admin-muted">Прозрачность текста ({Math.round((settings.heroTextOpacity ?? 0.85) * 100)}%)</span>
+                      <span className="admin-muted">Прозрачность (0–1)</span>
                       <input
-                        type="range"
+                        type="number"
                         min="0.2"
                         max="1"
                         step="0.05"
                         value={settings.heroTextOpacity ?? 0.85}
                         onChange={e => setSettings({ ...settings, heroTextOpacity: Number(e.target.value) })}
+                        className="admin-input"
                       />
                     </label>
                     <label className="admin-field">
@@ -1177,6 +1217,9 @@ function App() {
                 </div>
               )}
               {settingsError && <p className="admin-error">{settingsError}</p>}
+              <p className="admin-muted">
+                Черновик виден только в предпросмотре. Для публикации нажмите «Опубликовать».
+              </p>
             </section>
 
             
