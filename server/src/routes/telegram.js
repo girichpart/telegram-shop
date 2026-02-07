@@ -1,6 +1,7 @@
 const express = require('express');
 const axios = require('axios');
 const Customer = require('../models/Customer');
+const { sendMessage } = require('../utils/telegramNotify');
 
 const router = express.Router();
 
@@ -31,6 +32,7 @@ const extractContactFromUpdate = (update) => {
 router.post('/contact', async (req, res) => {
   try {
     const telegramId = req.body?.telegramId ? String(req.body.telegramId) : '';
+    const notify = req.body?.notify === true;
     if (!telegramId) {
       return res.status(400).json({ error: 'Необходим telegramId' });
     }
@@ -66,6 +68,10 @@ router.post('/contact', async (req, res) => {
       { $set: payload, $setOnInsert: { telegramId } },
       { new: true, upsert: true }
     );
+
+    if (notify && customer?.telegramId && customer?.phone) {
+      await sendMessage(customer.telegramId, `Номер подтвержден: ${customer.phone}`);
+    }
 
     res.json({ ok: true, phone: customer.phone || '', customer });
   } catch (err) {

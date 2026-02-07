@@ -27,13 +27,14 @@ const Account = () => {
       setPhoneSync('saving');
     }
     try {
+      const resolvedTelegram = telegramUser || getTelegramUser();
       await api.post('/api/customers', {
         phone: phoneNumber,
-        telegram: telegramUser ? {
-          id: telegramUser.id,
-          username: telegramUser.username,
-          firstName: telegramUser.first_name,
-          lastName: telegramUser.last_name
+        telegram: resolvedTelegram ? {
+          id: resolvedTelegram.id,
+          username: resolvedTelegram.username,
+          firstName: resolvedTelegram.first_name,
+          lastName: resolvedTelegram.last_name
         } : undefined,
         notify
       });
@@ -58,7 +59,7 @@ const Account = () => {
   const syncTelegramContact = async (notifyUser = false) => {
     if (!telegramUser?.id) return '';
     try {
-      const res = await api.post('/api/telegram/contact', { telegramId: telegramUser.id });
+      const res = await api.post('/api/telegram/contact', { telegramId: telegramUser.id, notify: notifyUser });
       const nextPhone = res.data?.phone || '';
       if (nextPhone) {
         localStorage.setItem('tg_phone', nextPhone);
@@ -77,6 +78,26 @@ const Account = () => {
       return '';
     }
   };
+
+  const fetchCustomerFromServer = useCallback(async () => {
+    if (!telegramUser?.id) return;
+    try {
+      const res = await api.get('/api/customers/public', {
+        params: { telegramId: telegramUser.id }
+      });
+      const serverPhone = res.data?.phone || '';
+      if (serverPhone) {
+        if (!phone || phone === serverPhone) {
+          setPhone(serverPhone);
+          setPhoneVerified(true);
+          localStorage.setItem('tg_phone', serverPhone);
+          localStorage.setItem('tg_phone_verified', 'true');
+        }
+      }
+    } catch (err) {
+      // ignore if not found
+    }
+  }, [telegramUser?.id, phone]);
 
   const loadOrders = useCallback(async (payload) => {
     setLoading(true);
@@ -196,6 +217,11 @@ const Account = () => {
     if (!telegramUser?.id || phone) return;
     syncTelegramContact();
   }, [telegramUser?.id, phone]);
+
+  useEffect(() => {
+    if (!telegramUser?.id) return;
+    fetchCustomerFromServer();
+  }, [telegramUser?.id, fetchCustomerFromServer]);
 
   useEffect(() => {
     if (!telegramUser?.id || !phone) return;

@@ -76,6 +76,50 @@ router.post('/clear-phone', async (req, res) => {
   }
 });
 
+router.get('/public', async (req, res) => {
+  try {
+    const telegramId = req.query?.telegramId ? String(req.query.telegramId) : '';
+    const phone = req.query?.phone || '';
+    if (!telegramId && !phone) {
+      return res.status(400).json({ error: 'Телефон или Telegram ID обязательны' });
+    }
+
+    let customer = null;
+    if (telegramId) {
+      customer = await Customer.findOne({ telegramId }).lean();
+    } else if (phone) {
+      customer = await Customer.findOne({ phone }).lean();
+    }
+
+    if (!customer && telegramId) {
+      const order = await Order.findOne({ 'telegram.id': telegramId }).sort({ createdAt: -1 }).lean();
+      if (order) {
+        return res.json({
+          phone: order.phone || '',
+          telegramId,
+          telegramUsername: order.telegram?.username || '',
+          firstName: order.telegram?.firstName || '',
+          lastName: order.telegram?.lastName || ''
+        });
+      }
+    }
+
+    if (!customer) {
+      return res.status(404).json({ error: 'Клиент не найден' });
+    }
+
+    res.json({
+      phone: customer.phone || '',
+      telegramId: customer.telegramId || '',
+      telegramUsername: customer.telegramUsername || '',
+      firstName: customer.firstName || '',
+      lastName: customer.lastName || ''
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.get('/', adminAuth, async (req, res) => {
   try {
     const customers = await Customer.find().sort({ lastSeenAt: -1, createdAt: -1 }).lean();

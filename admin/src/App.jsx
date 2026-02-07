@@ -50,6 +50,8 @@ function App() {
   const [products, setProducts] = useState([]);
   const [clients, setClients] = useState([]);
   const [clientsLoading, setClientsLoading] = useState(false);
+  const [clientQuery, setClientQuery] = useState('');
+  const [expandedClientId, setExpandedClientId] = useState('');
   const [orders, setOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [ordersError, setOrdersError] = useState('');
@@ -79,6 +81,23 @@ function App() {
   const [adminChatInput, setAdminChatInput] = useState('');
   const [webLocking, setWebLocking] = useState(false);
   const [webLockMessage, setWebLockMessage] = useState('');
+
+  const filteredClients = useMemo(() => {
+    if (!clientQuery) return clients;
+    const needle = clientQuery.toLowerCase();
+    const normalizePhone = (value) => String(value || '').replace(/\D+/g, '');
+    return clients.filter(client => {
+      const phoneRaw = String(client.phone || '');
+      const phone = normalizePhone(phoneRaw);
+      const queryPhone = normalizePhone(clientQuery);
+      if (queryPhone && phone.includes(queryPhone)) return true;
+      if (phoneRaw.toLowerCase().includes(needle)) return true;
+      if ((client.name || '').toLowerCase().includes(needle)) return true;
+      if ((client.telegramUsername || '').toLowerCase().includes(needle)) return true;
+      if ((client.telegramId || '').toLowerCase().includes(needle)) return true;
+      return false;
+    });
+  }, [clients, clientQuery]);
 
   const normalizeNumber = (value, fallback) => {
     if (value === '' || value === null || value === undefined) return fallback;
@@ -336,6 +355,7 @@ function App() {
     if (!token) return;
     if (activeTab === 'clients') {
       fetchCustomers();
+      fetchOrders();
     }
     if (activeTab === 'orders') {
       fetchOrders();
@@ -1002,29 +1022,72 @@ function App() {
           <section className="admin-panel">
             <div className="admin-panel-head">
               <h2>Клиенты</h2>
-              <p className="admin-muted">{clients.length} клиентов</p>
+              <p className="admin-muted">{filteredClients.length} клиентов</p>
             </div>
+            <input
+              type="text"
+              placeholder="Поиск по телефону или имени"
+              value={clientQuery}
+              onChange={e => setClientQuery(e.target.value)}
+              className="admin-input"
+            />
             {clientsLoading && <p className="admin-muted">Загрузка...</p>}
-            {!clientsLoading && clients.length === 0 && (
+            {!clientsLoading && filteredClients.length === 0 && (
               <p className="admin-muted">Пока нет клиентов.</p>
             )}
             <div className="admin-list">
-              {clients.map(client => (
-                <div key={client.id} className="admin-card">
-                  <div>
-                    <p className="admin-card-title">{client.name || 'Клиент'}</p>
-                    <p className="admin-card-subtitle">{client.phone || 'Телефон не указан'}</p>
-                    {client.telegramId && (
-                      <p className="admin-card-subtitle">chat_id: {client.telegramId}</p>
+              {filteredClients.map(client => {
+                const isOpen = expandedClientId === client.id;
+                const clientOrders = orders.filter(order => {
+                  const orderTelegramId = order.telegram?.id ? String(order.telegram.id) : '';
+                  const orderPhone = order.phone || '';
+                  return (client.telegramId && orderTelegramId === client.telegramId) ||
+                    (client.phone && orderPhone === client.phone);
+                });
+
+                return (
+                  <div key={client.id} className="admin-card">
+                    <button
+                      type="button"
+                      className="w-full text-left"
+                      onClick={() => setExpandedClientId(isOpen ? '' : client.id)}
+                    >
+                      <div className="flex items-center justify-between gap-4">
+                        <div>
+                          <p className="admin-card-title">{client.name || 'Клиент'}</p>
+                          <p className="admin-card-subtitle">{client.phone || 'Телефон не указан'}</p>
+                          {client.telegramId && (
+                            <p className="admin-card-subtitle">chat_id: {client.telegramId}</p>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <p className="admin-card-subtitle">
+                            {client.lastOrderAt ? `Активен: ${client.lastOrderAt.toLocaleDateString('ru-RU')}` : 'Нет активности'}
+                          </p>
+                          <p className="admin-card-subtitle">Заказов: {clientOrders.length}</p>
+                        </div>
+                      </div>
+                    </button>
+                    {isOpen && (
+                      <div className="mt-4 grid gap-3 text-[11px] uppercase tracking-[0.2em] opacity-80">
+                        {clientOrders.length === 0 && (
+                          <p className="admin-muted">Заказов нет.</p>
+                        )}
+                        {clientOrders.map(order => (
+                          <div key={order._id} className="rounded-sm border border-black/10 bg-white px-3 py-2">
+                            <div className="flex items-center justify-between">
+                              <span>Заказ #{order._id.slice(-6)}</span>
+                              <span>{order.totalAmount} ₽</span>
+                            </div>
+                            <div className="mt-1 opacity-60">Статус: {order.status}</div>
+                            <div className="mt-1 opacity-60">Оплата: {order.paymentStatus || order.payment?.status}</div>
+                          </div>
+                        ))}
+                      </div>
                     )}
                   </div>
-                  <div>
-                    <p className="admin-card-subtitle">
-                      {client.lastOrderAt ? `Активен: ${client.lastOrderAt.toLocaleDateString('ru-RU')}` : 'Нет активности'}
-                    </p>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </section>
         )}
