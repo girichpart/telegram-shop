@@ -21,7 +21,7 @@ const Account = () => {
     }
   }, []);
 
-  const saveCustomer = async (phoneNumber, { silent = false } = {}) => {
+  const saveCustomer = async (phoneNumber, { silent = false, notify = false } = {}) => {
     if (!phoneNumber) return false;
     if (!silent) {
       setPhoneSync('saving');
@@ -34,7 +34,8 @@ const Account = () => {
           username: telegramUser.username,
           firstName: telegramUser.first_name,
           lastName: telegramUser.last_name
-        } : undefined
+        } : undefined,
+        notify
       });
       phoneSyncRef.current = phoneNumber;
       if (!silent) {
@@ -54,17 +55,21 @@ const Account = () => {
     }
   };
 
-  const syncTelegramContact = async () => {
+  const syncTelegramContact = async (notifyUser = false) => {
     if (!telegramUser?.id) return '';
     try {
       const res = await api.post('/api/telegram/contact', { telegramId: telegramUser.id });
       const nextPhone = res.data?.phone || '';
       if (nextPhone) {
         localStorage.setItem('tg_phone', nextPhone);
-        localStorage.setItem('tg_phone_verified', 'true');
         setPhone(nextPhone);
-        setPhoneVerified(true);
-        await saveCustomer(nextPhone);
+        setPhoneVerified(false);
+        localStorage.setItem('tg_phone_verified', 'false');
+        const saved = await saveCustomer(nextPhone, { notify: notifyUser });
+        if (saved) {
+          setPhoneVerified(true);
+          localStorage.setItem('tg_phone_verified', 'true');
+        }
       }
       return nextPhone;
     } catch (err) {
@@ -106,15 +111,19 @@ const Account = () => {
         const phoneNumber = extractPhoneNumber(result);
         if (phoneNumber) {
           localStorage.setItem('tg_phone', phoneNumber);
-          localStorage.setItem('tg_phone_verified', 'true');
           setPhone(phoneNumber);
-          setPhoneVerified(true);
-          await saveCustomer(phoneNumber);
+          setPhoneVerified(false);
+          localStorage.setItem('tg_phone_verified', 'false');
+          const saved = await saveCustomer(phoneNumber, { notify: true });
+          if (saved) {
+            setPhoneVerified(true);
+            localStorage.setItem('tg_phone_verified', 'true');
+          }
           if (telegramUser?.id) {
             loadOrders({ telegramId: telegramUser.id });
           }
         } else {
-          const synced = await syncTelegramContact();
+          const synced = await syncTelegramContact(true);
           if (synced && telegramUser?.id) {
             loadOrders({ telegramId: telegramUser.id });
           }
@@ -138,6 +147,25 @@ const Account = () => {
       tg.openTelegramLink(url);
     } else {
       window.open(url, '_blank');
+    }
+  };
+
+  const handleClearPhone = async () => {
+    const current = phone;
+    localStorage.removeItem('tg_phone');
+    localStorage.removeItem('tg_phone_verified');
+    setPhone('');
+    setPhoneVerified(false);
+    setPhoneSync('cleared');
+    if (phoneSyncTimer.current) clearTimeout(phoneSyncTimer.current);
+    phoneSyncTimer.current = setTimeout(() => setPhoneSync(''), 2500);
+    try {
+      await api.post('/api/customers/clear-phone', {
+        telegramId: telegramUser?.id,
+        phone: current
+      });
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -209,12 +237,12 @@ const Account = () => {
         localStorage.setItem('tg_phone_verified', 'true');
         setPhone(phoneNumber);
         setPhoneVerified(true);
-        saveCustomer(phoneNumber);
+        saveCustomer(phoneNumber, { notify: true });
         if (telegramUser?.id) {
           loadOrders({ telegramId: telegramUser.id });
         }
       } else {
-        syncTelegramContact();
+        syncTelegramContact(true);
       }
     };
     tg.onEvent('contactRequested', handler);
@@ -290,18 +318,38 @@ const Account = () => {
                     Номер уже подтвержден
                   </p>
                 )}
+                {phoneSync === 'cleared' && (
+                  <p className="text-[10px] uppercase tracking-[0.25em] text-black/60 pns-fade-in">
+                    Номер удален
+                  </p>
+                )}
                 {phoneSync === 'error' && (
                   <p className="text-[10px] uppercase tracking-[0.25em] text-red-600 pns-fade-in">
                     Не удалось сохранить номер
                   </p>
                 )}
-                <button
-                  type="button"
-                  onClick={handleRequestPhone}
-                  className="border border-black/10 bg-white px-4 py-3 text-[12px] uppercase tracking-[0.25em]"
-                >
-                  Подтвердить телефон
-                </button>
+                {phoneVerified && phone ? (
+                  <div className="grid gap-3">
+                    <div className="text-[10px] uppercase tracking-[0.25em] text-emerald-600">
+                      Номер подтвержден
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleClearPhone}
+                      className="border border-black/10 bg-white px-4 py-3 text-[12px] uppercase tracking-[0.25em]"
+                    >
+                      Удалить номер
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleRequestPhone}
+                    className="border border-black/10 bg-white px-4 py-3 text-[12px] uppercase tracking-[0.25em]"
+                  >
+                    Подтвердить телефон
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={handleOpenBot}

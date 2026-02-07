@@ -237,5 +237,6 @@ const notifyOrder = async (order, type, extra = {}) => {
 };
 
 module.exports = {
-  notifyOrder
+  notifyOrder,
+  sendMessage
 };

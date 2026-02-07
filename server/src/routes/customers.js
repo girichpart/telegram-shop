@@ -1,6 +1,7 @@
 const express = require('express');
 const Customer = require('../models/Customer');
 const Order = require('../models/Order');
+const { sendMessage } = require('../utils/telegramNotify');
 const adminAuth = require('../middlewares/adminAuth');
 
 const router = express.Router();
@@ -32,6 +33,7 @@ const stripUndefined = (payload) => {
 router.post('/', async (req, res) => {
   try {
     const payload = stripUndefined(buildPayload(req.body || {}));
+    const notify = req.body?.notify === true;
     if (!payload.telegramId && !payload.phone) {
       return res.status(400).json({ error: 'Телефон или Telegram ID обязательны' });
     }
@@ -43,7 +45,32 @@ router.post('/', async (req, res) => {
       { new: true, upsert: true }
     );
 
+    if (notify && customer?.telegramId && customer?.phone) {
+      await sendMessage(customer.telegramId, `Номер подтвержден: ${customer.phone}`);
+    }
+
     res.json(customer);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/clear-phone', async (req, res) => {
+  try {
+    const telegramId = req.body?.telegramId ? String(req.body.telegramId) : '';
+    const phone = req.body?.phone || '';
+    if (!telegramId && !phone) {
+      return res.status(400).json({ error: 'Телефон или Telegram ID обязательны' });
+    }
+
+    const query = telegramId ? { telegramId } : { phone };
+    const customer = await Customer.findOneAndUpdate(
+      query,
+      { $set: { phone: '', lastSeenAt: new Date() } },
+      { new: true }
+    );
+
+    res.json({ ok: true, customer });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
