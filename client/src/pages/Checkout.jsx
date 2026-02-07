@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import { useCart } from '../context/CartContext.jsx';
@@ -21,6 +21,15 @@ const Checkout = () => {
 
   const [phone, setPhone] = useState(() => localStorage.getItem('tg_phone') || draft.phone || '');
   const [phoneVerified, setPhoneVerified] = useState(() => localStorage.getItem('tg_phone_verified') === 'true');
+  const [phoneSync, setPhoneSync] = useState('');
+  const phoneSyncRef = useRef('');
+  const phoneSyncTimer = useRef(null);
+
+  useEffect(() => () => {
+    if (phoneSyncTimer.current) {
+      clearTimeout(phoneSyncTimer.current);
+    }
+  }, []);
   const [email, setEmail] = useState(draft.email || '');
   const [firstName, setFirstName] = useState(draft.firstName || '');
   const [lastName, setLastName] = useState(draft.lastName || '');
@@ -102,27 +111,45 @@ const Checkout = () => {
     }
   }, [enabledProviders, deliveryProvider]);
 
-  useEffect(() => {
-    if (!telegramUser?.id || !phone) return;
-    saveCustomer(phone);
-  }, [telegramUser?.id, phone]);
-
-  const saveCustomer = async (phoneNumber) => {
-    if (!telegramUser?.id || !phoneNumber) return;
+  const saveCustomer = async (phoneNumber, { silent = false } = {}) => {
+    if (!phoneNumber) return false;
+    if (!silent) {
+      setPhoneSync('saving');
+    }
     try {
       await api.post('/api/customers', {
         phone: phoneNumber,
-        telegram: {
+        telegram: telegramUser ? {
           id: telegramUser.id,
           username: telegramUser.username,
           firstName: telegramUser.first_name,
           lastName: telegramUser.last_name
-        }
+        } : undefined
       });
+      phoneSyncRef.current = phoneNumber;
+      if (!silent) {
+        setPhoneSync('saved');
+        if (phoneSyncTimer.current) clearTimeout(phoneSyncTimer.current);
+        phoneSyncTimer.current = setTimeout(() => setPhoneSync(''), 3000);
+      }
+      return true;
     } catch (err) {
       console.error(err);
+      if (!silent) {
+        setPhoneSync('error');
+        if (phoneSyncTimer.current) clearTimeout(phoneSyncTimer.current);
+        phoneSyncTimer.current = setTimeout(() => setPhoneSync(''), 4000);
+      }
+      return false;
     }
   };
+
+  useEffect(() => {
+    if (!telegramUser?.id || !phone) return;
+    if (phoneSyncRef.current !== phone) {
+      saveCustomer(phone, { silent: true });
+    }
+  }, [telegramUser?.id, phone]);
 
   const syncTelegramContact = async () => {
     if (!telegramUser?.id) return '';
@@ -437,6 +464,21 @@ const Checkout = () => {
                 <p className="text-[10px] uppercase tracking-[0.25em] opacity-60">
                   {phoneVerified ? 'Телефон подтвержден в Telegram' : 'Можно подтвердить через Telegram'}
                 </p>
+                {phoneSync === 'saving' && (
+                  <p className="text-[10px] uppercase tracking-[0.25em] text-black/60 pns-fade-in">
+                    Сохраняем номер...
+                  </p>
+                )}
+                {phoneSync === 'saved' && (
+                  <p className="text-[10px] uppercase tracking-[0.25em] text-emerald-600 pns-fade-in">
+                    Номер подтвержден и сохранен
+                  </p>
+                )}
+                {phoneSync === 'error' && (
+                  <p className="text-[10px] uppercase tracking-[0.25em] text-red-600 pns-fade-in">
+                    Не удалось сохранить номер
+                  </p>
+                )}
                 <button
                   type="button"
                   onClick={requestTelegramPhone}

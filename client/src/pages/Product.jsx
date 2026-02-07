@@ -6,7 +6,7 @@ import SiteShell from '../components/SiteShell.jsx';
 
 const Product = () => {
   const { id } = useParams();
-  const { addItem } = useCart();
+  const { addItem, items, updateQuantity } = useCart();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedSize, setSelectedSize] = useState('');
@@ -72,6 +72,11 @@ const Product = () => {
     ? availableSizes.map(s => s.stock || 0)
     : [product.stock || 0];
   const soldOut = sizeStock.every(stock => stock <= 0);
+
+  const cartItem = items.find(item =>
+    item.productId === product._id && (item.size || 'ONE') === (selectedSize || 'ONE')
+  );
+  const cartQty = cartItem?.quantity || 0;
 
   return (
     <SiteShell headerVariant="site" headerTitle="grått" showFooter={false} showNotice>
@@ -171,15 +176,40 @@ const Product = () => {
       </div>
 
       <div className="fixed bottom-0 left-0 right-0 z-20 border-t border-black/10 bg-[--secondary] px-5 py-4">
-        <button
-          type="button"
-          onClick={addToCart}
-          disabled={soldOut || (product.sizes && product.sizes.length > 0 && !selectedSize)}
-          className="btn-primary flex w-full items-center justify-between rounded-md px-5 py-4 text-[12px] uppercase tracking-[0.3em]"
-        >
-          <span>{soldOut ? 'SOLD OUT' : 'В корзину'}</span>
-          <span>{product.price} ₽</span>
-        </button>
+        {!soldOut && cartQty > 0 ? (
+          <div className="flex items-center justify-between rounded-md border border-black/10 bg-white px-5 py-4 text-[12px] uppercase tracking-[0.3em]">
+            <span className="opacity-60">{product.price} ₽</span>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => updateQuantity(product._id, selectedSize || 'ONE', cartQty - 1)}
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-black/20 text-[14px] transition hover:bg-black hover:text-white"
+                aria-label="Уменьшить"
+              >
+                –
+              </button>
+              <span className="min-w-[2ch] text-center">{cartQty}</span>
+              <button
+                type="button"
+                onClick={() => addToCart()}
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-black/20 text-[14px] transition hover:bg-black hover:text-white"
+                aria-label="Увеличить"
+              >
+                +
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={addToCart}
+            disabled={soldOut || (product.sizes && product.sizes.length > 0 && !selectedSize)}
+            className="btn-primary flex w-full items-center justify-between rounded-md px-5 py-4 text-[12px] uppercase tracking-[0.3em]"
+          >
+            <span>{soldOut ? 'SOLD OUT' : 'В корзину'}</span>
+            <span>{product.price} ₽</span>
+          </button>
+        )}
       </div>
     </SiteShell>
   );

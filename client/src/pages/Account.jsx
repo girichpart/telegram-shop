@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import api from '../api';
 import SiteShell from '../components/SiteShell.jsx';
 import { extractPhoneNumber, getTelegramUser, isContactSuccess } from '../utils/telegram.js';
@@ -11,21 +11,46 @@ const Account = () => {
   const [activeTab, setActiveTab] = useState('profile');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [phoneSync, setPhoneSync] = useState('');
+  const phoneSyncRef = useRef('');
+  const phoneSyncTimer = useRef(null);
 
-  const saveCustomer = async (phoneNumber) => {
-    if (!telegramUser?.id || !phoneNumber) return;
+  useEffect(() => () => {
+    if (phoneSyncTimer.current) {
+      clearTimeout(phoneSyncTimer.current);
+    }
+  }, []);
+
+  const saveCustomer = async (phoneNumber, { silent = false } = {}) => {
+    if (!phoneNumber) return false;
+    if (!silent) {
+      setPhoneSync('saving');
+    }
     try {
       await api.post('/api/customers', {
         phone: phoneNumber,
-        telegram: {
+        telegram: telegramUser ? {
           id: telegramUser.id,
           username: telegramUser.username,
           firstName: telegramUser.first_name,
           lastName: telegramUser.last_name
-        }
+        } : undefined
       });
+      phoneSyncRef.current = phoneNumber;
+      if (!silent) {
+        setPhoneSync('saved');
+        if (phoneSyncTimer.current) clearTimeout(phoneSyncTimer.current);
+        phoneSyncTimer.current = setTimeout(() => setPhoneSync(''), 3000);
+      }
+      return true;
     } catch (err) {
       console.error(err);
+      if (!silent) {
+        setPhoneSync('error');
+        if (phoneSyncTimer.current) clearTimeout(phoneSyncTimer.current);
+        phoneSyncTimer.current = setTimeout(() => setPhoneSync(''), 4000);
+      }
+      return false;
     }
   };
 
@@ -140,7 +165,9 @@ const Account = () => {
 
   useEffect(() => {
     if (!telegramUser?.id || !phone) return;
-    saveCustomer(phone);
+    if (phoneSyncRef.current !== phone) {
+      saveCustomer(phone, { silent: true });
+    }
   }, [telegramUser?.id, phone]);
 
   useEffect(() => {
@@ -242,6 +269,21 @@ const Account = () => {
                   value={phone}
                   readOnly
                 />
+                {phoneSync === 'saving' && (
+                  <p className="text-[10px] uppercase tracking-[0.25em] text-black/60 pns-fade-in">
+                    Сохраняем номер...
+                  </p>
+                )}
+                {phoneSync === 'saved' && (
+                  <p className="text-[10px] uppercase tracking-[0.25em] text-emerald-600 pns-fade-in">
+                    Номер подтвержден и сохранен
+                  </p>
+                )}
+                {phoneSync === 'error' && (
+                  <p className="text-[10px] uppercase tracking-[0.25em] text-red-600 pns-fade-in">
+                    Не удалось сохранить номер
+                  </p>
+                )}
                 <button
                   type="button"
                   onClick={handleRequestPhone}

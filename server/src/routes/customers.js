@@ -1,5 +1,6 @@
 const express = require('express');
 const Customer = require('../models/Customer');
+const Order = require('../models/Order');
 const adminAuth = require('../middlewares/adminAuth');
 
 const router = express.Router();
@@ -7,19 +8,30 @@ const router = express.Router();
 const buildPayload = (payload) => {
   const telegram = payload?.telegram || {};
   const phone = payload?.phone || '';
-  return {
-    telegramId: telegram.id ? String(telegram.id) : undefined,
-    telegramUsername: telegram.username || '',
-    firstName: telegram.firstName || telegram.first_name || '',
-    lastName: telegram.lastName || telegram.last_name || '',
+  const data = {
     phone,
     lastSeenAt: new Date()
   };
+  if (telegram.id) data.telegramId = String(telegram.id);
+  if (telegram.username) data.telegramUsername = telegram.username;
+  if (telegram.firstName || telegram.first_name) data.firstName = telegram.firstName || telegram.first_name;
+  if (telegram.lastName || telegram.last_name) data.lastName = telegram.lastName || telegram.last_name;
+  return data;
+};
+
+const stripUndefined = (payload) => {
+  const out = {};
+  Object.entries(payload).forEach(([key, value]) => {
+    if (value === undefined) return;
+    if (typeof value === 'string' && value.trim() === '' && key !== 'phone') return;
+    out[key] = value;
+  });
+  return out;
 };
 
 router.post('/', async (req, res) => {
   try {
-    const payload = buildPayload(req.body || {});
+    const payload = stripUndefined(buildPayload(req.body || {}));
     if (!payload.telegramId && !payload.phone) {
       return res.status(400).json({ error: 'Телефон или Telegram ID обязательны' });
     }
@@ -39,8 +51,39 @@ router.post('/', async (req, res) => {
 
 router.get('/', adminAuth, async (req, res) => {
   try {
-    const customers = await Customer.find().sort({ lastSeenAt: -1, createdAt: -1 });
-    res.json(customers);
+    const customers = await Customer.find().sort({ lastSeenAt: -1, createdAt: -1 }).lean();
+    const orders = await Order.find().sort({ createdAt: -1 }).lean();
+    const map = new Map();
+
+    customers.forEach(customer => {
+      const key = customer.telegramId || customer.phone;
+      if (!key) return;
+      map.set(key, { ...customer, totalOrders: 0, totalAmount: 0 });
+    });
+
+    orders.forEach(order => {
+      const key = order.telegram?.id || order.phone;
+      if (!key) return;
+      const existing = map.get(key) || {
+        _id: undefined,
+        telegramId: order.telegram?.id ? String(order.telegram.id) : undefined,
+        telegramUsername: order.telegram?.username || '',
+        firstName: order.telegram?.firstName || '',
+        lastName: order.telegram?.lastName || '',
+        phone: order.phone || '',
+        lastSeenAt: order.createdAt,
+        totalOrders: 0,
+        totalAmount: 0
+      };
+      existing.totalOrders += 1;
+      existing.totalAmount += order.totalAmount || 0;
+      if (!existing.lastSeenAt || order.createdAt > existing.lastSeenAt) {
+        existing.lastSeenAt = order.createdAt;
+      }
+      map.set(key, existing);
+    });
+
+    res.json(Array.from(map.values()));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
