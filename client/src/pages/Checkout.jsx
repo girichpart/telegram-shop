@@ -218,6 +218,12 @@ const Checkout = () => {
   }, [telegramUser]);
 
   const requestTelegramPhone = async () => {
+    if (phoneVerified && phone) {
+      setPhoneSync('already');
+      if (phoneSyncTimer.current) clearTimeout(phoneSyncTimer.current);
+      phoneSyncTimer.current = setTimeout(() => setPhoneSync(''), 2500);
+      return;
+    }
     const tg = window.Telegram?.WebApp;
     if (!tg?.requestContact) {
       setError('Telegram не поддерживает запрос контакта.');
@@ -474,6 +480,11 @@ const Checkout = () => {
                     Номер подтвержден и сохранен
                   </p>
                 )}
+                {phoneSync === 'already' && (
+                  <p className="text-[10px] uppercase tracking-[0.25em] text-emerald-600 pns-fade-in">
+                    Номер уже подтвержден
+                  </p>
+                )}
                 {phoneSync === 'error' && (
                   <p className="text-[10px] uppercase tracking-[0.25em] text-red-600 pns-fade-in">
                     Не удалось сохранить номер
@@ -484,7 +495,7 @@ const Checkout = () => {
                   onClick={requestTelegramPhone}
                   className="btn-outline px-4 py-3 text-[12px] uppercase tracking-[0.25em]"
                 >
-                  Подтвердить номер через Telegram
+                  Подтвердить телефон
                 </button>
               </div>
               <div className="grid gap-2">
