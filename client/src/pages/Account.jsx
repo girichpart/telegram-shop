@@ -95,17 +95,15 @@ const Account = () => {
         return;
       }
       if (serverPhone) {
-        if (!phone || phone === serverPhone) {
-          setPhone(serverPhone);
-          setPhoneVerified(true);
-          localStorage.setItem('tg_phone', serverPhone);
-          localStorage.setItem('tg_phone_verified', 'true');
-        }
+        setPhone(serverPhone);
+        setPhoneVerified(true);
+        localStorage.setItem('tg_phone', serverPhone);
+        localStorage.setItem('tg_phone_verified', 'true');
       }
     } catch (err) {
       // ignore if not found
     }
-  }, [telegramUser?.id, phone]);
+  }, [telegramUser?.id]);
 
   const loadOrders = useCallback(async (payload) => {
     setLoading(true);

@@ -197,12 +197,10 @@ const Checkout = () => {
         return;
       }
       if (serverPhone) {
-        if (!phone || phone === serverPhone) {
-          setPhone(serverPhone);
-          setPhoneVerified(true);
-          localStorage.setItem('tg_phone', serverPhone);
-          localStorage.setItem('tg_phone_verified', 'true');
-        }
+        setPhone(serverPhone);
+        setPhoneVerified(true);
+        localStorage.setItem('tg_phone', serverPhone);
+        localStorage.setItem('tg_phone_verified', 'true');
       }
     } catch (err) {
       // ignore
