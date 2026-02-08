@@ -28,25 +28,37 @@ export const CartProvider = ({ children }) => {
   const addItem = (item, qty = 1) => {
     setItems(prev => {
       const existing = prev.find(p => itemKey(p) === itemKey(item));
+      const maxStock = Number.isFinite(item.maxStock)
+        ? item.maxStock
+        : Number.isFinite(existing?.maxStock)
+          ? existing.maxStock
+          : null;
       if (existing) {
+        const nextQty = maxStock !== null ? Math.min(existing.quantity + qty, maxStock) : existing.quantity + qty;
         return prev.map(p =>
           itemKey(p) === itemKey(item)
-            ? { ...p, quantity: p.quantity + qty }
+            ? { ...p, ...item, quantity: nextQty }
             : p
         );
       }
-      return [...prev, { ...item, quantity: qty }];
+      const initialQty = maxStock !== null ? Math.min(qty, maxStock) : qty;
+      if (maxStock !== null && maxStock <= 0) {
+        return prev;
+      }
+      return [...prev, { ...item, quantity: initialQty }];
     });
   };
 
   const updateQuantity = (productId, size, qty) => {
     setItems(prev => {
-      if (qty <= 0) return prev.filter(p => !(p.productId === productId && (p.size || 'ONE') === (size || 'ONE')));
-      return prev.map(p =>
-        p.productId === productId && (p.size || 'ONE') === (size || 'ONE')
-          ? { ...p, quantity: qty }
-          : p
-      );
+      const normalizedSize = size || 'ONE';
+      if (qty <= 0) return prev.filter(p => !(p.productId === productId && (p.size || 'ONE') === normalizedSize));
+      return prev.map(p => {
+        if (p.productId !== productId || (p.size || 'ONE') !== normalizedSize) return p;
+        const maxStock = Number.isFinite(p.maxStock) ? p.maxStock : null;
+        const nextQty = maxStock !== null ? Math.min(qty, maxStock) : qty;
+        return { ...p, quantity: nextQty };
+      });
     });
   };
 

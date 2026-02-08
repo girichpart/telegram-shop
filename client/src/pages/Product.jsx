@@ -36,12 +36,15 @@ const Product = () => {
     if (product.sizes && product.sizes.length > 0 && !selectedSize) {
       return;
     }
+    const sizeMatch = (product.sizes || []).find(s => s.label === (selectedSize || 'ONE'));
+    const maxStock = sizeMatch ? Number(sizeMatch.stock || 0) : Number(product.stock || 0);
     addItem({
       productId: product._id,
       name: product.name,
       price: product.price,
       image: product.images?.[0] || 'https://via.placeholder.com/300',
-      size: selectedSize || 'ONE'
+      size: selectedSize || 'ONE',
+      maxStock
     }, 1);
   };
 
@@ -71,7 +74,11 @@ const Product = () => {
   const sizeStock = Array.isArray(availableSizes) && availableSizes.length > 0
     ? availableSizes.map(s => s.stock || 0)
     : [product.stock || 0];
-  const soldOut = sizeStock.every(stock => stock <= 0);
+  const soldOut = sizeStock.every(stock => stock <= 0) || product.isActive === false;
+  const selectedStock = Array.isArray(availableSizes)
+    ? (availableSizes.find(s => s.label === (selectedSize || availableSizes[0]?.label))?.stock ?? product.stock)
+    : product.stock;
+  const showLastOne = Number(selectedStock) === 1;
 
   const cartItem = items.find(item =>
     item.productId === product._id && (item.size || 'ONE') === (selectedSize || 'ONE')
@@ -123,6 +130,9 @@ const Product = () => {
           </div>
           <h1 className="heading-md mt-3">{product.name}</h1>
           <p className="mt-2 text-[13px] uppercase tracking-[0.24em] opacity-70">{product.price} ₽</p>
+          {showLastOne && !soldOut && (
+            <p className="mt-2 text-[11px] uppercase tracking-[0.3em] text-red-500">Осталась 1 штука</p>
+          )}
         </div>
 
         <div className="mt-10">

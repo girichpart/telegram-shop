@@ -67,10 +67,21 @@ router.post('/clear-phone', async (req, res) => {
     }
 
     const query = telegramId ? { telegramId } : { phone };
+    const update = {
+      phone: '',
+      phoneOptOut: true,
+      lastSeenAt: new Date()
+    };
+    if (telegramId) {
+      update.telegramId = telegramId;
+    }
     const customer = await Customer.findOneAndUpdate(
       query,
-      { $set: { phone: '', phoneOptOut: true, lastSeenAt: new Date() } },
-      { new: true }
+      {
+        $set: update,
+        $setOnInsert: telegramId ? { telegramId } : query
+      },
+      { new: true, upsert: true }
     );
 
     res.json({ ok: true, customer });

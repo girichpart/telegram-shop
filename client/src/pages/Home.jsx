@@ -163,7 +163,7 @@ const Home = () => {
     return () => observer.disconnect();
   }, [products]);
 
-  const visibleProducts = products.filter(p => p.isActive !== false);
+  const visibleProducts = products;
 
   return (
     <SiteShell headerVariant="site" headerTitle="grått" showNotice={false} headerOverlay headerTransparent>
@@ -284,7 +284,9 @@ const Home = () => {
             const sizeStock = Array.isArray(product.sizes) && product.sizes.length > 0
               ? product.sizes.map(s => s.stock || 0)
               : [product.stock || 0];
-            const soldOut = sizeStock.every(stock => stock <= 0);
+            const totalStock = sizeStock.reduce((sum, s) => sum + s, 0);
+            const soldOut = sizeStock.every(stock => stock <= 0) || product.isActive === false;
+            const showLastOne = totalStock === 1;
             return (
             <article
               key={product._id}
@@ -322,6 +324,9 @@ const Home = () => {
                 <div>
                   <p className="opacity-50">{product.category || 'Техническая линейка'}</p>
                   <h3 className="mt-2 text-[13px] tracking-[0.25em]">{product.name}</h3>
+                  {showLastOne && !soldOut && (
+                    <p className="mt-2 text-[10px] uppercase tracking-[0.3em] text-red-500">Осталась 1 штука</p>
+                  )}
                 </div>
                 <span>{product.price} ₽</span>
               </div>

@@ -196,7 +196,14 @@ exports.calculateDelivery = async (req, res) => {
       etaDays: resolvedEta
     });
   } catch (err) {
-    res.status(500).json({ error: err.response?.data || err.message });
+    res.json({
+      provider: 'CDEK_FALLBACK',
+      city: city || 'Не указан',
+      type: type || 'pvz',
+      cost: 390,
+      etaDays: 3,
+      error: err.response?.data || err.message
+    });
   }
 };
 
