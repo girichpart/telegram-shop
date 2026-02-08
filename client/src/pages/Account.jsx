@@ -86,6 +86,14 @@ const Account = () => {
         params: { telegramId: telegramUser.id }
       });
       const serverPhone = res.data?.phone || '';
+      const phoneOptOut = res.data?.phoneOptOut === true;
+      if (phoneOptOut) {
+        localStorage.removeItem('tg_phone');
+        localStorage.removeItem('tg_phone_verified');
+        setPhone('');
+        setPhoneVerified(false);
+        return;
+      }
       if (serverPhone) {
         if (!phone || phone === serverPhone) {
           setPhone(serverPhone);

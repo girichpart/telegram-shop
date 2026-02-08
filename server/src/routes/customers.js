@@ -123,6 +123,7 @@ router.get('/public', async (req, res) => {
 
     res.json({
       phone: customer.phone || '',
+      phoneOptOut: Boolean(customer.phoneOptOut),
       telegramId: customer.telegramId || '',
       telegramUsername: customer.telegramUsername || '',
       firstName: customer.firstName || '',
