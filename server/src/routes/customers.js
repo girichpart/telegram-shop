@@ -17,6 +17,9 @@ const buildPayload = (payload) => {
   if (telegram.username) data.telegramUsername = telegram.username;
   if (telegram.firstName || telegram.first_name) data.firstName = telegram.firstName || telegram.first_name;
   if (telegram.lastName || telegram.last_name) data.lastName = telegram.lastName || telegram.last_name;
+  if (phone) {
+    data.phoneOptOut = false;
+  }
   return data;
 };
 
@@ -66,7 +69,7 @@ router.post('/clear-phone', async (req, res) => {
     const query = telegramId ? { telegramId } : { phone };
     const customer = await Customer.findOneAndUpdate(
       query,
-      { $set: { phone: '', lastSeenAt: new Date() } },
+      { $set: { phone: '', phoneOptOut: true, lastSeenAt: new Date() } },
       { new: true }
     );
 
@@ -89,6 +92,16 @@ router.get('/public', async (req, res) => {
       customer = await Customer.findOne({ telegramId }).lean();
     } else if (phone) {
       customer = await Customer.findOne({ phone }).lean();
+    }
+
+    if (customer?.phoneOptOut) {
+      return res.json({
+        phone: '',
+        telegramId: customer.telegramId || telegramId,
+        telegramUsername: customer.telegramUsername || '',
+        firstName: customer.firstName || '',
+        lastName: customer.lastName || ''
+      });
     }
 
     if (!customer && telegramId) {

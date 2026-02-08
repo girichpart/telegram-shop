@@ -60,6 +60,7 @@ router.post('/contact', async (req, res) => {
       firstName: matched.from?.first_name || matched.contact?.first_name || '',
       lastName: matched.from?.last_name || matched.contact?.last_name || '',
       phone: matched.contact?.phone_number || '',
+      phoneOptOut: false,
       lastSeenAt: new Date()
     };
 

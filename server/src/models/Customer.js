@@ -6,6 +6,7 @@ const customerSchema = new mongoose.Schema({
   firstName: String,
   lastName: String,
   phone: { type: String, index: true },
+  phoneOptOut: { type: Boolean, default: false },
   lastSeenAt: { type: Date, default: Date.now }
 }, { timestamps: true });
 
