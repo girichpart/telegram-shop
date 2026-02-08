@@ -53,7 +53,7 @@ const Products = () => {
   const visibleProducts = products;
 
   return (
-    <SiteShell headerVariant="site" headerTitle="grått" showNotice>
+    <SiteShell headerVariant="site" headerTitle="grått" showNotice={false}>
       <section className="px-5 py-12 pns-reveal" data-reveal>
         <div className="pns-sticky flex items-center justify-between">
           <p className="text-[11px] uppercase tracking-[0.3em] opacity-60">Каталог</p>
